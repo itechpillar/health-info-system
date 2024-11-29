@@ -1,0 +1,459 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Health Information System API",
+    "version": "1.0.0",
+    "description": "API documentation for the Student Health Information System"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/students": {
+      "get": {
+        "summary": "Get all students",
+        "responses": {
+          "200": {
+            "description": "List of students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Student"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new student",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "description": "Student's school ID number"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "description": "Student's first name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "description": "Student's last name"
+                  },
+                  "dateOfBirth": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Student's date of birth"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "description": "Student's gender"
+                  },
+                  "grade": {
+                    "type": "integer",
+                    "description": "Student's grade level"
+                  }
+                },
+                "required": ["studentId", "firstName", "lastName", "dateOfBirth", "gender", "grade"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Student created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/students/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Get student by ID",
+        "responses": {
+          "200": {
+            "description": "Student found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update student",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Student updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete student",
+        "responses": {
+          "204": {
+            "description": "Student deleted successfully"
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
+      }
+    },
+    "/health-records": {
+      "post": {
+        "summary": "Create a new health record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealthRecordInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Health record created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health-records/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Get health record by ID",
+        "responses": {
+          "200": {
+            "description": "Health record found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Health record not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update health record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealthRecordInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Health record updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Health record not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete health record",
+        "responses": {
+          "204": {
+            "description": "Health record deleted successfully"
+          },
+          "404": {
+            "description": "Health record not found"
+          }
+        }
+      }
+    },
+    "/students/{id}/health-records": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Get all health records for a student",
+        "responses": {
+          "200": {
+            "description": "List of health records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HealthRecord"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Student": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the student"
+          },
+          "studentId": {
+            "type": "string",
+            "description": "Student's school ID number"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Student's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Student's last name"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date",
+            "description": "Student's date of birth"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Student's gender"
+          },
+          "grade": {
+            "type": "integer",
+            "description": "Student's grade level"
+          }
+        },
+        "required": ["studentId", "firstName", "lastName", "dateOfBirth", "gender", "grade"]
+      },
+      "StudentInput": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "description": "Student's school ID number"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Student's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Student's last name"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date",
+            "description": "Student's date of birth"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Student's gender"
+          },
+          "grade": {
+            "type": "integer",
+            "description": "Student's grade level"
+          }
+        },
+        "required": ["studentId", "firstName", "lastName", "dateOfBirth", "gender", "grade"]
+      },
+      "HealthRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the health record"
+          },
+          "studentId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the student"
+          },
+          "recordDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the health record"
+          },
+          "recordType": {
+            "type": "string",
+            "description": "Type of health record"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "Weight in kilograms",
+            "nullable": true
+          },
+          "height": {
+            "type": "number",
+            "format": "float",
+            "description": "Height in centimeters",
+            "nullable": true
+          },
+          "bloodPressure": {
+            "type": "string",
+            "description": "Blood pressure reading",
+            "nullable": true
+          },
+          "temperature": {
+            "type": "number",
+            "format": "float",
+            "description": "Body temperature",
+            "nullable": true
+          },
+          "nextAppointment": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Next scheduled appointment date",
+            "nullable": true
+          }
+        },
+        "required": ["studentId", "recordDate", "recordType"]
+      },
+      "HealthRecordInput": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the student"
+          },
+          "recordDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the health record"
+          },
+          "recordType": {
+            "type": "string",
+            "description": "Type of health record"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "description": "Weight in kilograms"
+          },
+          "height": {
+            "type": "number",
+            "format": "float",
+            "description": "Height in centimeters"
+          },
+          "bloodPressure": {
+            "type": "string",
+            "description": "Blood pressure reading"
+          },
+          "temperature": {
+            "type": "number",
+            "format": "float",
+            "description": "Body temperature"
+          },
+          "nextAppointment": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Next scheduled appointment date"
+          }
+        },
+        "required": ["studentId", "recordDate", "recordType"]
+      }
+    }
+  }
+}
