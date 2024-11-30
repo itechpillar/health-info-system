@@ -303,7 +303,7 @@ const Dashboard = () => {
   const handleHealthRecordSubmit = async (formData) => {
     try {
       if (selectedHealthRecord) {
-        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord._id}`, formData);
+        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord.id}`, formData);
       } else {
         await axios.post(HEALTH_RECORDS_API, { ...formData, studentId: selectedStudent.id });
       }
