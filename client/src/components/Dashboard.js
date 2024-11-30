@@ -22,7 +22,10 @@ import {
   TableSortLabel,
   Collapse,
   Chip,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogContent,
+  DialogTitle
 } from '@mui/material';
 import {
   Search,
@@ -39,6 +42,7 @@ import {
 } from 'lucide-react';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { format } from 'date-fns';
+import HealthRecordForm from './HealthRecordForm';
 
 const API_URL = 'http://localhost:5000/api/students';
 const HEALTH_RECORDS_API = 'http://localhost:5000/api/health-records';
@@ -167,6 +171,8 @@ const Dashboard = () => {
   const [showRecords, setShowRecords] = useState(false);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('firstName');
+  const [isHealthRecordFormOpen, setIsHealthRecordFormOpen] = useState(false);
+  const [selectedHealthRecord, setSelectedHealthRecord] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -279,23 +285,38 @@ const Dashboard = () => {
 
   const handleEditHealthRecord = (record, e) => {
     e.preventDefault();
-    navigate(`/health-records/edit/${record.id}`, {
-      state: {
-        studentName: `${selectedStudent.firstName} ${selectedStudent.lastName}`,
-        returnPath: '/'
-      }
-    });
+    setSelectedHealthRecord(record);
+    setIsHealthRecordFormOpen(true);
   };
 
-  const handleAddHealthRecord = (e) => {
-    e.preventDefault();
-    if (selectedStudent) {
-      navigate(`/health-records/new/${selectedStudent.id}`, { 
-        state: { 
-          studentName: `${selectedStudent.firstName} ${selectedStudent.lastName}`,
-          returnPath: '/'
-        }
-      });
+  const handleAddHealthRecord = (student) => {
+    setSelectedStudent(student);
+    setSelectedHealthRecord(null);
+    setIsHealthRecordFormOpen(true);
+  };
+
+  const handleHealthRecordFormClose = () => {
+    setIsHealthRecordFormOpen(false);
+    setSelectedHealthRecord(null);
+  };
+
+  const handleHealthRecordSubmit = async (formData) => {
+    try {
+      if (selectedHealthRecord) {
+        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord._id}`, formData);
+      } else {
+        await axios.post(HEALTH_RECORDS_API, { ...formData, studentId: selectedStudent.id });
+      }
+      
+      // Refresh health records
+      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
+      setHealthRecords(response.data);
+      
+      // Close form
+      handleHealthRecordFormClose();
+    } catch (error) {
+      console.error('Error saving health record:', error);
+      throw error; // Let the form handle the error
     }
   };
 
@@ -589,7 +610,7 @@ const Dashboard = () => {
               startIcon={<Plus size={20} />}
               variant="contained"
               color="primary"
-              onClick={handleAddHealthRecord}
+              onClick={() => handleAddHealthRecord(selectedStudent)}
               disabled={loadingRecords}
             >
               Add Record
@@ -693,7 +714,7 @@ const Dashboard = () => {
                           startIcon={<Plus size={16} />}
                           variant="outlined"
                           size="small"
-                          onClick={handleAddHealthRecord}
+                          onClick={() => handleAddHealthRecord(selectedStudent)}
                         >
                           Add First Record
                         </Button>
@@ -749,6 +770,25 @@ const Dashboard = () => {
           </TableContainer>
         </Paper>
       </Collapse>
+
+      <Dialog 
+        open={isHealthRecordFormOpen} 
+        onClose={handleHealthRecordFormClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedHealthRecord ? 'Edit Health Record' : 'Add New Health Record'}
+        </DialogTitle>
+        <DialogContent>
+          <HealthRecordForm
+            initialData={selectedHealthRecord}
+            studentName={selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : ''}
+            onSubmit={handleHealthRecordSubmit}
+            onCancel={handleHealthRecordFormClose}
+          />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

@@ -1,27 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import {
-  Container,
-  Paper,
   TextField,
   Button,
   Typography,
   Box,
   Alert,
-  CircularProgress
+  CircularProgress,
+  MenuItem,
+  Grid
 } from '@mui/material';
-import { ArrowLeft } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/health-records';
+const RECORD_TYPES = [
+  'Annual Physical',
+  'Vaccination',
+  'Illness',
+  'Injury',
+  'Dental',
+  'Vision',
+  'Mental Health',
+  'Other'
+];
 
-const HealthRecordForm = () => {
-  const navigate = useNavigate();
-  const { id, studentId } = useParams();
-  const location = useLocation();
-  const { studentName, returnPath } = location.state || {};
-  const isEditMode = Boolean(id);
-
+const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     recordDate: new Date().toISOString().split('T')[0],
     recordType: '',
@@ -30,40 +31,25 @@ const HealthRecordForm = () => {
     bloodPressure: '',
     temperature: '',
     nextAppointment: '',
-    notes: ''
+    medicalNotes: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (isEditMode) {
-      fetchHealthRecord();
-    }
-  }, [id]);
-
-  const fetchHealthRecord = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_URL}/${id}`);
-      const record = response.data;
+    if (initialData) {
       setFormData({
-        recordDate: record.recordDate?.split('T')[0] || '',
-        recordType: record.recordType || '',
-        height: record.height || '',
-        weight: record.weight || '',
-        bloodPressure: record.bloodPressure || '',
-        temperature: record.temperature || '',
-        nextAppointment: record.nextAppointment?.split('T')[0] || '',
-        notes: record.notes || ''
+        recordDate: initialData.recordDate?.split('T')[0] || '',
+        recordType: initialData.recordType || '',
+        height: initialData.height || '',
+        weight: initialData.weight || '',
+        bloodPressure: initialData.bloodPressure || '',
+        temperature: initialData.temperature || '',
+        nextAppointment: initialData.nextAppointment?.split('T')[0] || '',
+        medicalNotes: initialData.medicalNotes || ''
       });
-    } catch (err) {
-      console.error('Error fetching health record:', err);
-      setError('Failed to fetch health record details');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,21 +57,7 @@ const HealthRecordForm = () => {
     setError(null);
 
     try {
-      const payload = {
-        ...formData,
-        studentId: studentId || formData.studentId
-      };
-
-      if (isEditMode) {
-        await axios.put(`${API_URL}/${id}`, payload);
-      } else {
-        await axios.post(API_URL, payload);
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate(returnPath || '/', { replace: true });
-      }, 1500);
+      await onSubmit(formData);
     } catch (err) {
       console.error('Error saving health record:', err);
       setError('Failed to save health record. Please try again.');
@@ -102,69 +74,61 @@ const HealthRecordForm = () => {
     }));
   };
 
-  const handleCancel = () => {
-    navigate(returnPath || '/', { replace: true });
-  };
-
   if (loading && !formData.recordType) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button
-            startIcon={<ArrowLeft />}
-            onClick={handleCancel}
-            sx={{ minWidth: 'auto' }}
-          >
-            Back
-          </Button>
-          <Typography variant="h5" component="h1">
-            {isEditMode ? 'Edit' : 'New'} Health Record
-            {studentName && <Typography variant="subtitle1" color="text.secondary">
-              for {studentName}
-            </Typography>}
-          </Typography>
-        </Box>
+    <Box sx={{ p: 2 }}>
+      {studentName && (
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
+          for {studentName}
+        </Typography>
+      )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            Health record {isEditMode ? 'updated' : 'created'} successfully!
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'grid', gap: 3, mb: 3 }}>
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
             <TextField
+              required
               fullWidth
               label="Record Date"
               type="date"
               name="recordDate"
               value={formData.recordDate}
               onChange={handleInputChange}
-              required
               InputLabelProps={{ shrink: true }}
             />
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <TextField
+              required
               fullWidth
+              select
               label="Record Type"
               name="recordType"
               value={formData.recordType}
               onChange={handleInputChange}
-              required
-            />
+            >
+              {RECORD_TYPES.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Height (cm)"
@@ -174,6 +138,8 @@ const HealthRecordForm = () => {
               onChange={handleInputChange}
               inputProps={{ step: "0.1" }}
             />
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Weight (kg)"
@@ -183,13 +149,19 @@ const HealthRecordForm = () => {
               onChange={handleInputChange}
               inputProps={{ step: "0.1" }}
             />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Blood Pressure"
               name="bloodPressure"
               value={formData.bloodPressure}
               onChange={handleInputChange}
+              placeholder="e.g., 120/80"
             />
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Temperature (°F)"
@@ -199,6 +171,9 @@ const HealthRecordForm = () => {
               onChange={handleInputChange}
               inputProps={{ step: "0.1" }}
             />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Next Appointment"
@@ -208,37 +183,41 @@ const HealthRecordForm = () => {
               onChange={handleInputChange}
               InputLabelProps={{ shrink: true }}
             />
+          </Grid>
+
+          <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
               multiline
               rows={4}
+              label="Medical Notes"
+              name="medicalNotes"
+              value={formData.medicalNotes}
+              onChange={handleInputChange}
             />
-          </Box>
+          </Grid>
+        </Grid>
 
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-            <Button
-              variant="outlined"
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : (isEditMode ? 'Update' : 'Create')}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Container>
+        <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button
+            variant="outlined"
+            onClick={onCancel}
+            startIcon={<X size={20} />}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            startIcon={<Save size={20} />}
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save Record'}
+          </Button>
+        </Box>
+      </form>
+    </Box>
   );
 };
 
