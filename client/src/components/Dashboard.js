@@ -162,7 +162,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(3);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [healthRecords, setHealthRecords] = useState([]);
@@ -581,7 +581,7 @@ const Dashboard = () => {
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[3, 5, 10, 25]}
+          rowsPerPageOptions={[3, 10, 25]}
           component="div"
           count={sortedStudents.length}
           rowsPerPage={rowsPerPage}
@@ -768,6 +768,15 @@ const Dashboard = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[3, 10, 25]}
+            component="div"
+            count={healthRecords.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </Paper>
       </Collapse>
 
