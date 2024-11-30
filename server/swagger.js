@@ -1,5 +1,10 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 
+// Determine the server URL based on environment
+const serverUrl = process.env.NODE_ENV === 'production'
+  ? 'https://health-records-api.onrender.com'
+  : 'http://localhost:5000';
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -14,8 +19,8 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
-        description: 'Development server'
+        url: serverUrl,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
       }
     ],
     components: {
