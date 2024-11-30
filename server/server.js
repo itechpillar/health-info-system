@@ -33,20 +33,21 @@ app.get('/', (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  
+  // Serve static files
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  console.error('Error stack:', err.stack);
-  res.status(500).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  console.error('Error:', err.message);
+  res.status(500).json({ 
+    error: 'Server error', 
+    message: process.env.NODE_ENV === 'production' ? 'An error occurred' : err.message 
   });
 });
 
@@ -79,6 +80,10 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      if (process.env.NODE_ENV === 'production') {
+        console.log('Serving React app from:', path.join(__dirname, 'public'));
+      }
     });
   } catch (error) {
     console.error('Unable to start server:', error);
