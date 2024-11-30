@@ -1,5 +1,4 @@
-const HealthRecord = require('../models/HealthRecord');
-const Student = require('../models/Student');
+const { HealthRecord, StudentModel } = require('../models');
 
 const formatRecord = (record) => {
   if (!record) return null;
@@ -13,9 +12,7 @@ const healthRecordController = {
   create: async (req, res) => {
     try {
       // Check if student exists
-      const student = await Student.findOne({
-        where: { studentId: req.body.studentId }
-      });
+      const student = await StudentModel.findByPk(req.body.studentId);
       if (!student) {
         return res.status(404).json({ message: 'Student not found' });
       }
@@ -54,12 +51,7 @@ const healthRecordController = {
   // Get all health records for a specific student
   findAllByStudent: async (req, res) => {
     try {
-      console.log('Finding health records for student:', req.params.studentId);
-      
-      const student = await Student.findOne({
-        where: { studentId: req.params.studentId }
-      });
-      
+      const student = await StudentModel.findByPk(req.params.studentId);
       if (!student) {
         return res.status(404).json({ message: 'Student not found' });
       }
@@ -69,7 +61,6 @@ const healthRecordController = {
         order: [['recordDate', 'DESC']]
       });
 
-      console.log(`Found ${healthRecords.length} health records`);
       res.json(healthRecords.map(formatRecord));
     } catch (error) {
       console.error('Find student health records error:', error);
@@ -80,14 +71,10 @@ const healthRecordController = {
   // Get a single health record
   findOne: async (req, res) => {
     try {
-      const healthRecord = await HealthRecord.findOne({
-        where: { id: req.params.id }
-      });
-      
+      const healthRecord = await HealthRecord.findByPk(req.params.id);
       if (!healthRecord) {
         return res.status(404).json({ message: 'Health record not found' });
       }
-      
       res.json(formatRecord(healthRecord));
     } catch (error) {
       console.error('Find health record error:', error);
@@ -98,30 +85,21 @@ const healthRecordController = {
   // Update a health record
   update: async (req, res) => {
     try {
-      const healthRecord = await HealthRecord.findOne({
-        where: { id: req.params.id }
-      });
-      
+      const healthRecord = await HealthRecord.findByPk(req.params.id);
       if (!healthRecord) {
         return res.status(404).json({ message: 'Health record not found' });
       }
 
-      // Check if student exists if studentId is being updated
-      if (req.body.studentId) {
-        const student = await Student.findOne({
-          where: { studentId: req.body.studentId }
-        });
+      // If studentId is being updated, check if new student exists
+      if (req.body.studentId && req.body.studentId !== healthRecord.studentId) {
+        const student = await StudentModel.findByPk(req.body.studentId);
         if (!student) {
           return res.status(404).json({ message: 'Student not found' });
         }
       }
 
       await healthRecord.update(req.body);
-      const updatedRecord = await HealthRecord.findOne({
-        where: { id: healthRecord.id }
-      });
-      
-      res.json(formatRecord(updatedRecord));
+      res.json(formatRecord(healthRecord));
     } catch (error) {
       console.error('Update health record error:', error);
       res.status(400).json({ message: error.message });
@@ -131,16 +109,12 @@ const healthRecordController = {
   // Delete a health record
   delete: async (req, res) => {
     try {
-      const healthRecord = await HealthRecord.findOne({
-        where: { id: req.params.id }
-      });
-      
+      const healthRecord = await HealthRecord.findByPk(req.params.id);
       if (!healthRecord) {
         return res.status(404).json({ message: 'Health record not found' });
       }
-      
       await healthRecord.destroy();
-      res.status(204).send();
+      res.status(204).end();
     } catch (error) {
       console.error('Delete health record error:', error);
       res.status(500).json({ message: error.message });

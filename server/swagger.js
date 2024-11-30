@@ -22,16 +22,12 @@ const options = {
       schemas: {
         Student: {
           type: 'object',
-          required: ['studentId', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'grade'],
+          required: ['firstName', 'lastName', 'dateOfBirth', 'gender', 'grade'],
           properties: {
             id: {
               type: 'string',
               format: 'uuid',
               description: 'Unique identifier for the student'
-            },
-            studentId: {
-              type: 'string',
-              description: 'Student\'s school ID number'
             },
             firstName: {
               type: 'string',
@@ -53,6 +49,20 @@ const options = {
             grade: {
               type: 'integer',
               description: 'Student\'s grade level'
+            },
+            bloodType: {
+              type: 'string',
+              description: 'Blood type of the student'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp when the record was created'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp when the record was last updated'
             }
           }
         },
@@ -61,11 +71,13 @@ const options = {
           required: ['studentId', 'recordDate', 'recordType'],
           properties: {
             id: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: 'Unique identifier for the health record'
             },
             studentId: {
-              type: 'integer',
+              type: 'string',
+              format: 'uuid',
               description: 'ID of the student this record belongs to'
             },
             recordDate: {
@@ -75,11 +87,32 @@ const options = {
             },
             recordType: {
               type: 'string',
-              description: 'Type of health record'
+              description: 'Type of health record (e.g., checkup, vaccination)'
             },
-            condition: {
+            allergies: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of allergies'
+            },
+            medications: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of medications'
+            },
+            medicalConditions: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of medical conditions'
+            },
+            diagnosis: {
               type: 'string',
-              description: 'Health condition'
+              description: 'Medical diagnosis'
             },
             treatment: {
               type: 'string',
@@ -88,6 +121,21 @@ const options = {
             notes: {
               type: 'string',
               description: 'Additional notes'
+            },
+            nextCheckupDate: {
+              type: 'string',
+              format: 'date',
+              description: 'Date for next checkup'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp when the record was created'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Timestamp when the record was last updated'
             }
           }
         },

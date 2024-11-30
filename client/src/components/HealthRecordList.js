@@ -26,6 +26,7 @@ import {
 import { format, isValid, parseISO } from 'date-fns';
 
 const API_URL = 'http://localhost:5000/api/students';
+const HEALTH_RECORDS_API_URL = 'http://localhost:5000/api/health-records';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -57,7 +58,7 @@ const HealthRecordList = () => {
       setLoading(true);
       const [studentResponse, recordsResponse] = await Promise.all([
         axios.get(`${API_URL}/${studentId}`),
-        axios.get(`${API_URL}/${studentId}/health-records`)
+        axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`)
       ]);
       
       setCurrentStudent(studentResponse.data);
@@ -86,7 +87,7 @@ const HealthRecordList = () => {
       const healthRecordsData = {};
       for (const student of response.data) {
         try {
-          const recordsResponse = await axios.get(`${API_URL}/${student.id}/health-records`);
+          const recordsResponse = await axios.get(`${HEALTH_RECORDS_API_URL}/student/${student.id}`);
           healthRecordsData[student.id] = recordsResponse.data;
         } catch (err) {
           console.error(`Error fetching health records for student ${student.id}:`, err);
@@ -106,9 +107,9 @@ const HealthRecordList = () => {
   const handleDelete = async (recordId, studentId) => {
     if (window.confirm('Are you sure you want to delete this health record?')) {
       try {
-        await axios.delete(`${API_URL}/${studentId}/health-records/${recordId}`);
+        await axios.delete(`${HEALTH_RECORDS_API_URL}/${recordId}`);
         // Refresh the health records for this student
-        const recordsResponse = await axios.get(`${API_URL}/${studentId}/health-records`);
+        const recordsResponse = await axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`);
         setHealthRecords(prev => ({
           ...prev,
           [studentId]: recordsResponse.data

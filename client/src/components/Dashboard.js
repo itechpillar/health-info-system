@@ -98,18 +98,19 @@ const Dashboard = () => {
 
   const handleViewRecords = async (e, student) => {
     e.stopPropagation(); // Prevent row click event
+    if (selectedStudent?.id === student.id) {
+      setSelectedStudent(null);
+      setHealthRecords([]);
+      return;
+    }
+    
+    setLoadingRecords(true);
+    setSelectedStudent(student);
+    
     try {
-      if (selectedStudent?.id === student.id) {
-        setSelectedStudent(null);
-        setHealthRecords([]);
-        return;
-      }
-      
-      setLoadingRecords(true);
-      setSelectedStudent(student);
-      
-      const response = await axios.get(`${HEALTH_RECORDS_API}/${student.id}`);
+      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
       setHealthRecords(response.data);
+      setError(null);
     } catch (error) {
       console.error('Error fetching health records:', error);
       setError('Failed to fetch health records');
@@ -120,18 +121,19 @@ const Dashboard = () => {
   };
 
   const handleRowClick = async (student) => {
+    if (selectedStudent?.id === student.id) {
+      setSelectedStudent(null);
+      setHealthRecords([]);
+      return;
+    }
+    
+    setLoadingRecords(true);
+    setSelectedStudent(student);
+    
     try {
-      if (selectedStudent?.id === student.id) {
-        setSelectedStudent(null);
-        setHealthRecords([]);
-        return;
-      }
-      
-      setLoadingRecords(true);
-      setSelectedStudent(student);
-      
-      const response = await axios.get(`${HEALTH_RECORDS_API}/${student.id}`);
+      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
       setHealthRecords(response.data);
+      setError(null);
     } catch (error) {
       console.error('Error fetching health records:', error);
       setError('Failed to fetch health records');
@@ -142,20 +144,19 @@ const Dashboard = () => {
   };
 
   const handleDeleteRecord = async (recordId) => {
-    if (window.confirm('Are you sure you want to delete this health record?')) {
-      try {
-        setError(null);
-        await axios.delete(`${HEALTH_RECORDS_API}/${recordId}`);
-        
-        // Refresh health records for the selected student
-        if (selectedStudent) {
-          const response = await axios.get(`${HEALTH_RECORDS_API}/${selectedStudent.id}`);
-          setHealthRecords(response.data);
-        }
-      } catch (error) {
-        console.error('Error deleting health record:', error);
-        setError('Failed to delete health record. Please try again later.');
-      }
+    if (!window.confirm('Are you sure you want to delete this health record?')) {
+      return;
+    }
+    
+    try {
+      setError(null);
+      await axios.delete(`${HEALTH_RECORDS_API}/${recordId}`);
+      
+      // Only update the health records array, don't refetch
+      setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
+    } catch (error) {
+      console.error('Error deleting health record:', error);
+      setError('Failed to delete health record. Please try again later.');
     }
   };
 

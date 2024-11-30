@@ -9,24 +9,30 @@ exports.create = async (req, res) => {
       lastName,
       dateOfBirth,
       gender,
-      schoolName,
-      contactNumber,
-      email,
-      address
+      grade,
+      bloodType
     } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !dateOfBirth || !gender || !grade) {
+      return res.status(400).json({
+        message: 'Required fields missing',
+        required: ['firstName', 'lastName', 'dateOfBirth', 'gender', 'grade']
+      });
+    }
 
     const student = await Student.create({
       firstName,
       lastName,
       dateOfBirth,
       gender,
-      schoolName,
-      contactNumber,
-      email,
-      address
+      grade,
+      bloodType
     });
 
-    res.status(201).json(student);
+    // Convert to entity before sending response
+    const studentEntity = student.toEntity();
+    res.status(201).json(studentEntity);
   } catch (error) {
     console.error('Error creating student:', error);
     res.status(500).json({ message: 'Error creating student', error: error.message });

@@ -28,6 +28,35 @@ router.get('/', healthRecordController.findAll);
 
 /**
  * @swagger
+ * /api/health-records/student/{studentId}:
+ *   get:
+ *     summary: Get all health records for a student
+ *     tags: [Health Records]
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Student ID
+ *     responses:
+ *       200:
+ *         description: List of health records for the student
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/HealthRecord'
+ *       404:
+ *         description: Student not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/student/:studentId', healthRecordController.findAllByStudent);
+
+/**
+ * @swagger
  * /api/health-records/{id}:
  *   get:
  *     summary: Get a health record by ID
@@ -72,7 +101,53 @@ router.get('/:id', healthRecordController.findOne);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/HealthRecord'
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - recordDate
+ *               - recordType
+ *             properties:
+ *               studentId:
+ *                 type: integer
+ *                 description: ID of the student this record belongs to
+ *               recordDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Date of the health record
+ *               recordType:
+ *                 type: string
+ *                 description: Type of health record
+ *               weight:
+ *                 type: number
+ *                 format: float
+ *                 description: Weight in kilograms
+ *               height:
+ *                 type: number
+ *                 format: float
+ *                 description: Height in centimeters
+ *               bloodPressure:
+ *                 type: string
+ *                 description: Blood pressure reading
+ *               temperature:
+ *                 type: number
+ *                 format: float
+ *                 description: Body temperature
+ *               allergies:
+ *                 type: string
+ *                 description: Allergies information
+ *               medications:
+ *                 type: string
+ *                 description: Current medications
+ *               medicalNotes:
+ *                 type: string
+ *                 description: Medical notes
+ *               treatmentPlan:
+ *                 type: string
+ *                 description: Treatment plan details
+ *               nextAppointment:
+ *                 type: string
+ *                 format: date
+ *                 description: Next appointment date
  *     responses:
  *       201:
  *         description: Health record created successfully

@@ -1,7 +1,12 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
+const { HealthRecord: HealthRecordEntity } = require('./entities/HealthRecord');
 
-class HealthRecord extends Model {}
+class HealthRecord extends Model {
+  toEntity(student = null) {
+    return HealthRecordEntity.fromDatabase(this.toJSON(), student);
+  }
+}
 
 HealthRecord.init(
   {
@@ -79,7 +84,7 @@ HealthRecord.init(
 
 // Define association with Student
 HealthRecord.associate = (models) => {
-  HealthRecord.belongsTo(models.Student, {
+  HealthRecord.belongsTo(models.StudentModel, {
     foreignKey: 'studentId',
     targetKey: 'id',
     as: 'student'

@@ -1,20 +1,20 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
+const Student = require('./entities/Student');
 
-class Student extends Model {}
+class StudentModel extends Model {
+  toEntity(healthRecords = []) {
+    return Student.fromDatabase(this.toJSON(), healthRecords);
+  }
+}
 
-Student.init(
+StudentModel.init(
   {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       allowNull: false
-    },
-    studentId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
     },
     firstName: {
       type: DataTypes.STRING,
@@ -35,23 +35,28 @@ Student.init(
     grade: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    bloodType: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   },
   {
     sequelize,
-    modelName: 'Student',
+    modelName: 'StudentModel',
     tableName: 'Students',
     timestamps: true
   }
 );
 
 // Define associations
-Student.associate = (models) => {
-  Student.hasMany(models.HealthRecord, {
+StudentModel.associate = (models) => {
+  StudentModel.hasMany(models.HealthRecord, {
     foreignKey: 'studentId',
+    sourceKey: 'id',
     as: 'healthRecords',
     onDelete: 'CASCADE'
   });
 };
 
-module.exports = Student;
+module.exports = StudentModel;
