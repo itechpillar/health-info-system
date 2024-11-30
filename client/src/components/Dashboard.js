@@ -333,13 +333,24 @@ const Dashboard = () => {
     setIsHealthRecordFormOpen(true);
   };
 
-  const handleHealthRecordFormClose = () => {
+  const handleHealthRecordFormClose = async (refreshNeeded = false) => {
     setIsHealthRecordFormOpen(false);
     setSelectedHealthRecord(null);
+    if (refreshNeeded && selectedStudent) {
+      try {
+        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
+        setHealthRecords(response.data);
+      } catch (err) {
+        console.error('Error fetching health records:', err);
+        setRecordsError('Failed to fetch health records. Please try again.');
+        setHealthRecords([]);
+      }
+    }
   };
 
   const handleHealthRecordSubmit = async (formData) => {
     try {
+      setLoading(true);
       const recordData = {
         ...formData,
         studentId: selectedStudent.id,
@@ -359,10 +370,12 @@ const Dashboard = () => {
       setHealthRecords(response.data);
       
       // Close form
-      handleHealthRecordFormClose();
+      handleHealthRecordFormClose(true);
     } catch (error) {
       console.error('Error saving health record:', error);
-      throw error;
+      setError('Failed to save health record. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
