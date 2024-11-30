@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -8,235 +7,187 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
-  Typography,
-  Box,
-  CircularProgress,
-  Fade,
   IconButton,
+  Button,
+  Dialog,
+  Box,
+  Typography,
   Tooltip,
+  Chip,
 } from '@mui/material';
-import { format } from 'date-fns';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CreateRoundedIcon from '@mui/icons-material/CreateRounded';
-import SettingsIcon from '@mui/icons-material/Settings';
+import { Edit, Delete, Add } from '@mui/icons-material';
+import EventIcon from '@mui/icons-material/Event';
+import CategoryIcon from '@mui/icons-material/Category';
 import HeightIcon from '@mui/icons-material/Height';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
-import EventIcon from '@mui/icons-material/Event';
-import CategoryIcon from '@mui/icons-material/Category';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { format } from 'date-fns';
+import HealthRecordForm from './HealthRecordForm';
 
-const HealthRecordsTable = ({ student, healthRecords, isLoading }) => {
-  const navigate = useNavigate();
-
-  if (!student) {
-    return null;
+const BMI_CATEGORIES = {
+  severelyUnderweight: {
+    range: [0, 16],
+    label: 'Severe',
+    color: '#1565C0',
+    backgroundColor: '#E3F2FD',
+    description: 'BMI < 16: Severely underweight - Medical attention recommended'
+  },
+  underweight: {
+    range: [16, 18.5],
+    label: 'Low',
+    color: '#2196F3',
+    backgroundColor: '#BBDEFB',
+    description: 'BMI 16-18.5: Underweight - May need nutritional assessment'
+  },
+  normal: {
+    range: [18.5, 25],
+    label: 'Normal',
+    color: '#2E7D32',
+    backgroundColor: '#E8F5E9',
+    description: 'BMI 18.5-25: Healthy weight range'
+  },
+  overweight: {
+    range: [25, 30],
+    label: 'High',
+    color: '#ED6C02',
+    backgroundColor: '#FFF3E0',
+    description: 'BMI 25-30: Overweight - Lifestyle changes may be beneficial'
+  },
+  obese: {
+    range: [30, 35],
+    label: 'Very High',
+    color: '#D32F2F',
+    backgroundColor: '#FFEBEE',
+    description: 'BMI 30-35: Obese Class I - Health risks increased'
   }
+};
 
-  const handleAddHealthRecord = (e) => {
-    e.stopPropagation();
-    navigate(`/health-records/new?studentId=${student.id}`);
-  };
+const getBMICategory = (bmi) => {
+  if (!bmi || isNaN(bmi)) return null;
+  const bmiValue = typeof bmi === 'string' ? parseFloat(bmi) : bmi;
+  
+  for (const [category, data] of Object.entries(BMI_CATEGORIES)) {
+    if (bmiValue >= data.range[0] && bmiValue < data.range[1]) {
+      return { category, ...data };
+    }
+  }
+  return null;
+};
 
+const BMIDisplay = ({ bmi }) => {
+  if (!bmi || isNaN(bmi)) return 'N/A';
+  
+  const bmiValue = typeof bmi === 'string' ? parseFloat(bmi) : bmi;
+  const category = getBMICategory(bmiValue);
+  
+  if (!category) return bmiValue.toFixed(1);
+  
   return (
-    <Fade in={true} timeout={800}>
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 2,
-          backgroundColor: 'primary.main',
-          color: 'white',
-          borderRadius: 1,
-          p: 2,
-          boxShadow: 1,
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssignmentIndIcon />
-            <Typography variant="h6" component="div">
-              Health Records for {student.firstName} {student.lastName}
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            color="secondary"
-            size="small"
-            onClick={handleAddHealthRecord}
-            startIcon={<AddCircleOutlineIcon />}
-            sx={{ 
-              backgroundColor: 'white',
-              color: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'grey.100',
-                transform: 'scale(1.05)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-          >
-            Add Health Record
-          </Button>
-        </Box>
-        
-        <TableContainer 
-          component={Paper}
-          sx={{
-            position: 'relative',
-            minHeight: '200px',
-            opacity: isLoading ? 0.7 : 1,
-            transition: 'opacity 0.3s ease-in-out',
-          }}
+    <Tooltip 
+      title={
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ marginBottom: '4px' }}><strong>{category.description}</strong></div>
+          <div style={{ fontSize: '0.9em', opacity: 0.9 }}>
+            Click for detailed health information
+          </div>
+        </div>
+      } 
+      arrow
+    >
+      <Chip
+        label={`${bmiValue.toFixed(1)} (${category.label})`}
+        size="small"
+        sx={{
+          color: category.color,
+          backgroundColor: category.backgroundColor,
+          fontWeight: 'medium',
+          '&:hover': {
+            backgroundColor: category.backgroundColor,
+            opacity: 0.9,
+          },
+          minWidth: '120px',
+          '& .MuiChip-label': {
+            padding: '0 8px'
+          }
+        }}
+      />
+    </Tooltip>
+  );
+};
+
+const HealthRecordsTable = ({ healthRecords, onEdit, onDelete, student, onRefresh, onAddRecord }) => {
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6">Health Records for {student?.firstName} {student?.lastName}</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Add />}
+          onClick={onAddRecord}
         >
-          {isLoading && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                zIndex: 1,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          )}
-          <Table size="medium">
-            <TableHead>
-              <TableRow>
+          Add Record
+        </Button>
+      </Box>
+      
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Date</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Height (cm)</TableCell>
+              <TableCell>Weight (kg)</TableCell>
+              <TableCell>Temperature (°C)</TableCell>
+              <TableCell>Blood Pressure</TableCell>
+              <TableCell>BMI</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {healthRecords.map((record) => (
+              <TableRow key={record.id}>
+                <TableCell>{format(new Date(record.recordDate), 'MM/dd/yyyy')}</TableCell>
+                <TableCell>{record.recordType}</TableCell>
+                <TableCell>{record.height}</TableCell>
+                <TableCell>{record.weight}</TableCell>
+                <TableCell>{record.temperature}</TableCell>
+                <TableCell>{record.bloodPressure}</TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EventIcon color="primary" />
-                    Record Date
-                  </Box>
+                  <BMIDisplay bmi={record.bmi} />
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CategoryIcon color="primary" />
-                    Record Type
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <HeightIcon color="primary" />
-                    Height (cm)
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <MonitorWeightIcon color="primary" />
-                    Weight (kg)
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FavoriteIcon color="primary" />
-                    Blood Pressure
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <DeviceThermostatIcon color="primary" />
-                    Temperature (°C)
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EventIcon color="primary" />
-                    Next Appointment
-                  </Box>
-                </TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
-                    <SettingsIcon color="primary" />
-                    Actions
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Tooltip title="Edit Record">
+                      <IconButton onClick={() => onEdit(record)}>
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Record">
+                      <IconButton onClick={() => onDelete(record)}>
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {healthRecords && healthRecords.length > 0 ? (
-                healthRecords.map((record) => (
-                  <TableRow 
-                    key={record.id}
-                    hover
-                    sx={{
-                      transition: 'background-color 0.2s ease-in-out',
-                    }}
-                  >
-                    <TableCell>
-                      {format(new Date(record.recordDate), 'MM/dd/yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      {record.recordType}
-                    </TableCell>
-                    <TableCell>
-                      {record.height || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {record.weight || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {record.bloodPressure || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {record.temperature || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {record.nextAppointment 
-                        ? format(new Date(record.nextAppointment), 'MM/dd/yyyy')
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <Tooltip title="Edit Health Record" arrow>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/health-records/edit/${record.id}`);
-                            }}
-                            sx={{
-                              border: '2px solid',
-                              borderColor: 'primary.main',
-                              color: 'primary.main',
-                              width: '34px',
-                              height: '34px',
-                              '&:hover': {
-                                backgroundColor: 'primary.main',
-                                color: 'white',
-                                transform: 'scale(1.1)',
-                              },
-                              transition: 'all 0.2s ease-in-out',
-                            }}
-                          >
-                            <CreateRoundedIcon sx={{ fontSize: 18 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    <Typography color="textSecondary" sx={{ py: 4 }}>
-                      No health records found
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    </Fade>
+            ))}
+            {healthRecords.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  <Typography variant="body1" sx={{ py: 2 }}>
+                    No health records found. Click "Add Record" to create one.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

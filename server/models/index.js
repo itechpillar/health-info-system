@@ -1,11 +1,11 @@
 const sequelize = require('../config/connection');
-const Student = require('./Student');
+const StudentModel = require('./Student');
 const HealthRecord = require('./HealthRecord');
 const User = require('./User');
 
 // Initialize models
 const models = {
-  Student,
+  StudentModel,
   HealthRecord,
   User
 };

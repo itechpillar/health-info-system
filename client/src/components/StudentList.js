@@ -57,14 +57,17 @@ const StudentList = () => {
   const fetchHealthRecords = async (studentId) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/students/${studentId}/health-records`, {
+      console.log('Fetching health records for student:', studentId);
+      const response = await axios.get(`http://localhost:5000/api/health-records/student/${studentId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
+      console.log('Health records response:', response.data);
       setHealthRecords(response.data);
     } catch (error) {
       console.error('Error fetching health records:', error);
+      setHealthRecords([]);
     } finally {
       setIsLoading(false);
     }
@@ -81,12 +84,12 @@ const StudentList = () => {
   };
 
   const handleAddStudent = () => {
-    navigate('/students/new');
+    navigate('/student/add');
   };
 
   const handleEditStudent = (e, studentId) => {
     e.stopPropagation();
-    navigate(`/students/edit/${studentId}`);
+    navigate(`/student/edit/${studentId}`);
   };
 
   return (
@@ -257,24 +260,15 @@ const StudentList = () => {
         </Table>
       </TableContainer>
 
-      <Grow 
-        in={selectedStudent !== null} 
-        timeout={500}
-        style={{ transformOrigin: '0 0 0' }}
-      >
-        <div>
-          {selectedStudent && (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <HealthRecordsTable 
-                student={selectedStudent}
-                healthRecords={healthRecords}
-                isLoading={isLoading}
-              />
-            </>
-          )}
-        </div>
-      </Grow>
+      {selectedStudent && (
+        <Box sx={{ mt: 2 }}>
+          <HealthRecordsTable
+            student={selectedStudent}
+            healthRecords={healthRecords}
+            isLoading={isLoading}
+          />
+        </Box>
+      )}
     </div>
   );
 };

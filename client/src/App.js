@@ -58,17 +58,7 @@ const App = () => {
             }
           />
           <Route
-            path="/students"
-            element={
-              <PrivateRoute>
-                <MainLayout>
-                  <StudentList />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/students/new"
+            path="/student/add"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -78,7 +68,7 @@ const App = () => {
             }
           />
           <Route
-            path="/students/edit/:id"
+            path="/student/edit/:id"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -88,7 +78,7 @@ const App = () => {
             }
           />
           <Route
-            path="/students/:id/health-records"
+            path="/student/:id/health-records"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -117,6 +107,7 @@ const App = () => {
               </PrivateRoute>
             }
           />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </ThemeProvider>

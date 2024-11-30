@@ -1,4 +1,4 @@
-const { sequelize, Student, HealthRecord } = require('../models');
+const { sequelize, StudentModel, HealthRecord } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
 const seedData = async () => {
@@ -14,35 +14,35 @@ const seedData = async () => {
     const students = [
       {
         id: studentUUIDs.student1,
-        studentId: 'STU001',
         firstName: 'John',
         lastName: 'Doe',
         dateOfBirth: '2010-05-15',
         gender: 'Male',
-        grade: 5
+        grade: 5,
+        bloodType: 'A+'
       },
       {
         id: studentUUIDs.student2,
-        studentId: 'STU002',
         firstName: 'Alice',
         lastName: 'Smith',
         dateOfBirth: '2011-03-20',
         gender: 'Female',
-        grade: 4
+        grade: 4,
+        bloodType: 'O+'
       },
       {
         id: studentUUIDs.student3,
-        studentId: 'STU003',
         firstName: 'Michael',
         lastName: 'Johnson',
         dateOfBirth: '2010-08-10',
         gender: 'Male',
-        grade: 5
+        grade: 5,
+        bloodType: 'B+'
       }
     ];
 
     // Create students
-    const createdStudents = await Student.bulkCreate(students);
+    const createdStudents = await StudentModel.bulkCreate(students);
 
     // Sample health records
     const healthRecords = [
@@ -55,8 +55,8 @@ const seedData = async () => {
         weight: 40.2,
         bloodPressure: '110/70',
         temperature: 36.6,
-        allergies: ['Peanuts'],
-        medications: ['None'],
+        allergies: 'Peanuts',
+        medications: 'None',
         medicalNotes: 'Healthy child, regular development',
         treatmentPlan: 'Continue regular checkups',
         nextAppointment: '2024-07-15'
@@ -70,8 +70,8 @@ const seedData = async () => {
         weight: 35.5,
         bloodPressure: '108/68',
         temperature: 36.7,
-        allergies: ['None'],
-        medications: ['Cold medicine'],
+        allergies: 'None',
+        medications: 'Cold medicine',
         medicalNotes: 'Mild cold symptoms present, asthma well controlled',
         treatmentPlan: 'Monitor cold symptoms, continue asthma medication',
         nextAppointment: '2024-07-16'
@@ -85,8 +85,8 @@ const seedData = async () => {
         weight: 38.4,
         bloodPressure: '112/72',
         temperature: 36.5,
-        allergies: ['Dust'],
-        medications: ['Allergy medication'],
+        allergies: 'Dust',
+        medications: 'Allergy medication',
         medicalNotes: 'Healthy child, seasonal allergies well managed',
         treatmentPlan: 'Continue allergy medication as needed',
         nextAppointment: '2024-07-17'

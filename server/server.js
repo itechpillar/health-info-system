@@ -46,19 +46,25 @@ const start = async () => {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
 
-    // Sync models with database
-    await sequelize.sync({ force: true }); // This will recreate all tables
-    
-    // Create default admin user - password will be hashed by the model's beforeCreate hook
-    await User.create({
-      username: 'admin',
-      password: 'admin123'  // Raw password, will be hashed by the model
-    });
-    console.log('Default admin user created');
+    // Sync models with database (without force)
+    await sequelize.sync();
+    console.log('Database synchronized');
 
-    // Seed sample data
-    await seedData();
-    console.log('Sample data seeded successfully');
+    // Check if admin user exists
+    const adminExists = await User.findOne({ where: { username: 'admin' } });
+    
+    if (!adminExists) {
+      // Create default admin user if it doesn't exist
+      await User.create({
+        username: 'admin',
+        password: 'admin123'  // Raw password, will be hashed by the model
+      });
+      console.log('Default admin user created');
+
+      // Seed sample data only if it's a fresh database
+      await seedData();
+      console.log('Sample data seeded successfully');
+    }
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

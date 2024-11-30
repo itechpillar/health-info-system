@@ -75,32 +75,31 @@ router.get('/:id', studentController.findOne);
  *           schema:
  *             type: object
  *             required:
- *               - studentId
  *               - firstName
  *               - lastName
  *               - dateOfBirth
  *               - gender
  *               - grade
  *             properties:
- *               studentId:
- *                 type: string
- *                 description: Student's school ID number
  *               firstName:
  *                 type: string
- *                 description: Student's first name
+ *                 description: First name of the student
  *               lastName:
  *                 type: string
- *                 description: Student's last name
+ *                 description: Last name of the student
  *               dateOfBirth:
  *                 type: string
  *                 format: date
- *                 description: Student's date of birth
+ *                 description: Date of birth of the student
  *               gender:
  *                 type: string
- *                 description: Student's gender
+ *                 description: Gender of the student
  *               grade:
  *                 type: integer
  *                 description: Student's grade level
+ *               bloodType:
+ *                 type: string
+ *                 description: Blood type of the student
  *     responses:
  *       201:
  *         description: Student created successfully
@@ -109,7 +108,7 @@ router.get('/:id', studentController.findOne);
  *             schema:
  *               $ref: '#/components/schemas/Student'
  *       400:
- *         description: Invalid input
+ *         description: Invalid input data
  *         content:
  *           application/json:
  *             schema:

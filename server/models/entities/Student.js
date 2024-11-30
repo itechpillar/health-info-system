@@ -1,25 +1,25 @@
+const HealthRecord = require('./HealthRecord');
+
 class Student {
   constructor({
     id,
-    studentId,
     firstName,
     lastName,
     dateOfBirth,
     gender,
+    grade,
     bloodType,
-    emergencyContact,
     createdAt,
     updatedAt,
     healthRecords = []
   }) {
     this.id = id;
-    this.studentId = studentId;
     this.firstName = firstName;
     this.lastName = lastName;
     this.dateOfBirth = dateOfBirth;
     this.gender = gender;
+    this.grade = grade;
     this.bloodType = bloodType;
-    this.emergencyContact = emergencyContact;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.healthRecords = healthRecords;
@@ -35,13 +35,12 @@ class Student {
   toJSON() {
     return {
       id: this.id,
-      studentId: this.studentId,
       firstName: this.firstName,
       lastName: this.lastName,
       dateOfBirth: this.dateOfBirth,
       gender: this.gender,
+      grade: this.grade,
       bloodType: this.bloodType,
-      emergencyContact: this.emergencyContact,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       healthRecords: this.healthRecords.map(record => record.toJSON())

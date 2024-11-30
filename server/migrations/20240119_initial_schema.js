@@ -2,38 +2,6 @@
 
 module.exports = {
   up: async (queryInterface, DataTypes) => {
-    // Create Users table
-    await queryInterface.createTable('Users', {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-        allowNull: false
-      },
-      username: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
-      },
-      password: {
-        type: DataTypes.STRING,
-        allowNull: false
-      },
-      role: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'user'
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false
-      }
-    });
-
     // Create Students table
     await queryInterface.createTable('Students', {
       id: {
@@ -41,11 +9,6 @@ module.exports = {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false
-      },
-      studentId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
       },
       firstName: {
         type: DataTypes.STRING,
@@ -66,6 +29,10 @@ module.exports = {
       grade: {
         type: DataTypes.INTEGER,
         allowNull: false
+      },
+      bloodType: {
+        type: DataTypes.STRING,
+        allowNull: true
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -104,16 +71,42 @@ module.exports = {
         type: DataTypes.STRING,
         allowNull: false
       },
-      condition: {
+      weight: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        comment: 'Weight in kilograms'
+      },
+      height: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        comment: 'Height in centimeters'
+      },
+      bloodPressure: {
         type: DataTypes.STRING,
         allowNull: true
       },
-      treatment: {
+      temperature: {
+        type: DataTypes.FLOAT,
+        allowNull: true
+      },
+      allergies: {
         type: DataTypes.TEXT,
         allowNull: true
       },
-      notes: {
+      medications: {
         type: DataTypes.TEXT,
+        allowNull: true
+      },
+      medicalNotes: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+      treatmentPlan: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
+      nextAppointment: {
+        type: DataTypes.DATE,
         allowNull: true
       },
       createdAt: {
@@ -126,7 +119,7 @@ module.exports = {
       }
     });
 
-    // Add index for recordDate in HealthRecords
+    // Add indexes
     await queryInterface.addIndex('HealthRecords', ['recordDate'], {
       name: 'health_records_record_date'
     });
@@ -143,6 +136,5 @@ module.exports = {
     // Drop tables in reverse order
     await queryInterface.dropTable('HealthRecords');
     await queryInterface.dropTable('Students');
-    await queryInterface.dropTable('Users');
   }
 };
