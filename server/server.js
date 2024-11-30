@@ -2,14 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { sequelize, User, Student, HealthRecord } = require('./models');
-const studentRoutes = require('./routes/students');
-const healthRecordRoutes = require('./routes/healthRecords');
-const authRoutes = require('./routes/auth');
-const seedData = require('./seeders/seed');
-const bcrypt = require('bcryptjs');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpecs = require('./swagger');
+const { sequelize } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,17 +18,17 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/health-records', healthRecordRoutes);
+app.use('/api/students', require('./routes/students'));
+app.use('/api/health-records', require('./routes/healthRecords'));
 
 // API welcome route
 app.get('/api', (req, res) => {
-  res.json({ message: 'Welcome to Health Records API' });
+  res.json({ 
+    message: 'Welcome to Health Records API',
+    environment: process.env.NODE_ENV,
+    database: process.env.DATABASE_URL ? 'Render PostgreSQL' : 'Local PostgreSQL'
+  });
 });
-
-// Swagger API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // Handle React routing in production
 if (process.env.NODE_ENV === 'production') {
@@ -62,31 +55,17 @@ const startServer = async () => {
   try {
     // Test database connection
     await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
-
-    // Sync models with database (without force)
-    await sequelize.sync();
-    console.log('Database synchronized');
-
-    // Check if admin user exists
-    const adminExists = await User.findOne({ where: { username: 'admin' } });
+    console.log('Database connection established successfully.');
     
-    if (!adminExists) {
-      // Create default admin user if it doesn't exist
-      await User.create({
-        username: 'admin',
-        password: 'admin123'  // Raw password, will be hashed by the model
-      });
-      console.log('Default admin user created');
-
-      // Seed sample data only if it's a fresh database
-      await seedData();
-      console.log('Sample data seeded successfully');
-    }
-
+    // Sync database
+    await sequelize.sync();
+    console.log('Database synced successfully');
+    
+    // Start server
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`Database: ${process.env.DATABASE_URL ? 'Render PostgreSQL' : 'Local PostgreSQL'}`);
       if (process.env.NODE_ENV === 'production') {
         console.log('Serving React app from:', path.join(__dirname, 'public'));
       }

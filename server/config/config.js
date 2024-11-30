@@ -1,21 +1,32 @@
 require('dotenv').config();
 
-module.exports = {
+// If DATABASE_URL exists (Render), use it. Otherwise, use local config
+const useLocalDB = !process.env.DATABASE_URL;
+
+const config = {
   development: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'health_records',
-    host: process.env.DB_HOST || '127.0.0.1',
+    username: 'postgres',
+    password: 'postgres',
+    database: 'health_records_dev',
+    host: '127.0.0.1',
     dialect: 'postgres'
   },
   test: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
+    username: 'postgres',
+    password: 'postgres',
+    database: 'health_records_test',
+    host: '127.0.0.1',
     dialect: 'postgres'
   },
-  production: {
+  production: useLocalDB ? {
+    // Local production settings
+    username: 'postgres',
+    password: 'postgres',
+    database: 'health_records',
+    host: '127.0.0.1',
+    dialect: 'postgres'
+  } : {
+    // Render production settings
     use_env_variable: 'DATABASE_URL',
     dialect: 'postgres',
     dialectOptions: {
@@ -23,6 +34,16 @@ module.exports = {
         require: true,
         rejectUnauthorized: false
       }
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
     }
   }
 };
+
+console.log(`Using ${useLocalDB ? 'local' : 'Render'} database configuration`);
+
+module.exports = config;
