@@ -7,6 +7,7 @@ class Student {
     lastName,
     dateOfBirth,
     gender,
+    grade,
     bloodType,
     createdAt,
     updatedAt,
@@ -17,6 +18,7 @@ class Student {
     this.lastName = lastName;
     this.dateOfBirth = dateOfBirth;
     this.gender = gender;
+    this.grade = grade;
     this.bloodType = bloodType;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -37,6 +39,7 @@ class Student {
       lastName: this.lastName,
       dateOfBirth: this.dateOfBirth,
       gender: this.gender,
+      grade: this.grade,
       bloodType: this.bloodType,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

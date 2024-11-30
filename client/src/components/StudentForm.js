@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   TextField,
@@ -8,24 +8,65 @@ import {
   Paper,
   Grid,
   Alert,
-  MenuItem
+  MenuItem,
+  CircularProgress
 } from '@mui/material';
 
 const StudentForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const [loading, setLoading] = useState(isEditMode);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     dateOfBirth: '',
     gender: '',
-    studentId: '',
     grade: '',
-    contactNumber: '',
-    email: '',
-    address: ''
+    bloodType: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (isEditMode) {
+      fetchStudent();
+    }
+  }, [id]);
+
+  const fetchStudent = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/students/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch student');
+      }
+
+      const student = await response.json();
+      
+      // Format the date to YYYY-MM-DD for the date input
+      const formattedDate = student.dateOfBirth ? 
+        new Date(student.dateOfBirth).toISOString().split('T')[0] : '';
+
+      setFormData({
+        firstName: student.firstName || '',
+        lastName: student.lastName || '',
+        dateOfBirth: formattedDate,
+        gender: student.gender || '',
+        grade: student.grade || '',
+        bloodType: student.bloodType || ''
+      });
+    } catch (err) {
+      setError('Failed to fetch student details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,8 +79,12 @@ const StudentForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/students', {
-        method: 'POST',
+      const url = isEditMode ? 
+        `http://localhost:5000/api/students/${id}` : 
+        'http://localhost:5000/api/students';
+
+      const response = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -48,23 +93,31 @@ const StudentForm = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create student');
+        throw new Error(isEditMode ? 'Failed to update student' : 'Failed to create student');
       }
 
-      setSuccess('Student created successfully!');
+      setSuccess(isEditMode ? 'Student updated successfully!' : 'Student created successfully!');
       setTimeout(() => {
-        navigate('/');
+        navigate('/students');
       }, 2000);
     } catch (err) {
       setError(err.message);
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
-          Create New Student
+          {isEditMode ? 'Edit Student' : 'Create New Student'}
         </Typography>
         
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -123,11 +176,21 @@ const StudentForm = () => {
               <TextField
                 required
                 fullWidth
-                label="Student ID"
-                name="studentId"
-                value={formData.studentId}
+                select
+                label="Blood Type"
+                name="bloodType"
+                value={formData.bloodType}
                 onChange={handleChange}
-              />
+              >
+                <MenuItem value="A+">A+</MenuItem>
+                <MenuItem value="A-">A-</MenuItem>
+                <MenuItem value="B+">B+</MenuItem>
+                <MenuItem value="B-">B-</MenuItem>
+                <MenuItem value="AB+">AB+</MenuItem>
+                <MenuItem value="AB-">AB-</MenuItem>
+                <MenuItem value="O+">O+</MenuItem>
+                <MenuItem value="O-">O-</MenuItem>
+              </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -139,41 +202,11 @@ const StudentForm = () => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Contact Number"
-                name="contactNumber"
-                value={formData.contactNumber}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                type="email"
-                label="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                multiline
-                rows={3}
-              />
-            </Grid>
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/students')}
                 >
                   Cancel
                 </Button>
@@ -182,7 +215,7 @@ const StudentForm = () => {
                   variant="contained"
                   color="primary"
                 >
-                  Create Student
+                  {isEditMode ? 'Update Student' : 'Create Student'}
                 </Button>
               </Box>
             </Grid>

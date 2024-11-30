@@ -74,10 +74,8 @@ exports.update = async (req, res) => {
       lastName,
       dateOfBirth,
       gender,
-      schoolName,
-      contactNumber,
-      email,
-      address
+      grade,
+      bloodType
     } = req.body;
 
     const student = await Student.findByPk(req.params.id);
@@ -90,10 +88,8 @@ exports.update = async (req, res) => {
       lastName,
       dateOfBirth,
       gender,
-      schoolName,
-      contactNumber,
-      email,
-      address
+      grade,
+      bloodType
     });
 
     res.json(student);

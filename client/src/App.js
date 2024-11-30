@@ -68,7 +68,7 @@ const App = () => {
             }
           />
           <Route
-            path="/students/new"
+            path="/students/add"
             element={
               <PrivateRoute>
                 <MainLayout>

@@ -81,7 +81,7 @@ const StudentList = () => {
   };
 
   const handleAddStudent = () => {
-    navigate('/students/new');
+    navigate('/students/add');
   };
 
   const handleEditStudent = (e, studentId) => {
