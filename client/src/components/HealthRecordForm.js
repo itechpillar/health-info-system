@@ -168,17 +168,52 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
               value={formData.bloodPressure}
               onChange={handleInputChange}
               placeholder="e.g., 120/80"
+              helperText={
+                <span>
+                  Normal range: <span style={{ fontWeight: 500, color: 'primary.main' }}>90/60 - 120/80</span>
+                  <br />
+                  Format: systolic/diastolic (e.g., 120/80)
+                  <br />
+                  • Normal: 90/60 - 120/80
+                  <br />
+                  • Elevated: 120/80 - 129/80
+                  <br />
+                  • High: 130/80 or higher
+                </span>
+              }
+              FormHelperTextProps={{
+                sx: { 
+                  color: 'text.secondary',
+                  '& span': {
+                    color: 'text.secondary'
+                  }
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Temperature (°F)"
-              type="number"
+              label="Temperature (°C)"
               name="temperature"
+              type="number"
               value={formData.temperature}
               onChange={handleInputChange}
-              inputProps={{ step: "0.1" }}
+              inputProps={{
+                step: "0.1",
+                min: "30",
+                max: "45"
+              }}
+              helperText="Normal range: 36.5°C - 37.5°C (97.7°F - 99.5°F)"
+              FormHelperTextProps={{
+                sx: { 
+                  color: 'text.secondary',
+                  '& span': {
+                    fontWeight: 'medium',
+                    color: 'primary.main'
+                  }
+                }
+              }}
             />
           </Grid>
 

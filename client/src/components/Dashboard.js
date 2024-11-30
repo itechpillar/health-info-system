@@ -10,22 +10,24 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
+  TableSortLabel,
+  Button,
+  IconButton,
   Typography,
   Box,
-  IconButton,
-  TablePagination,
-  CircularProgress,
-  Alert,
   TextField,
   InputAdornment,
-  Button,
-  TableSortLabel,
   Collapse,
-  Chip,
-  Tooltip,
+  Alert,
+  CircularProgress,
   Dialog,
+  DialogTitle,
   DialogContent,
-  DialogTitle
+  DialogContentText,
+  DialogActions,
+  Tooltip,
+  Chip
 } from '@mui/material';
 import {
   Search,
@@ -171,8 +173,14 @@ const Dashboard = () => {
   const [showRecords, setShowRecords] = useState(false);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('firstName');
+  const [healthRecordOrder, setHealthRecordOrder] = useState('desc');
+  const [healthRecordOrderBy, setHealthRecordOrderBy] = useState('recordDate');
   const [isHealthRecordFormOpen, setIsHealthRecordFormOpen] = useState(false);
   const [selectedHealthRecord, setSelectedHealthRecord] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteHealthRecordDialogOpen, setDeleteHealthRecordDialogOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState(null);
+  const [studentToDelete, setStudentToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -194,24 +202,58 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (studentId) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      try {
-        setError(null);
-        await axios.delete(`${API_URL}/${studentId}`);
-        
-        // If the deleted student was selected, clear the selection
-        if (selectedStudent?.id === studentId) {
-          setSelectedStudent(null);
-          setHealthRecords([]);
-        }
-        
-        // Refresh the students list
-        fetchStudents();
-      } catch (error) {
-        console.error('Error deleting student:', error);
-        setError('Failed to delete student. Please try again later.');
+  const handleDeleteDialogOpen = (student, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setStudentToDelete(student);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setStudentToDelete(null);
+  };
+
+  const handleDeleteHealthRecordDialogOpen = (record) => {
+    setRecordToDelete(record);
+    setDeleteHealthRecordDialogOpen(true);
+  };
+
+  const handleDeleteHealthRecordDialogClose = () => {
+    setDeleteHealthRecordDialogOpen(false);
+    setRecordToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    try {
+      setError(null);
+      await axios.delete(`${API_URL}/${studentToDelete.id}`);
+      
+      // If the deleted student was selected, clear the selection
+      if (selectedStudent?.id === studentToDelete.id) {
+        setSelectedStudent(null);
+        setHealthRecords([]);
       }
+      
+      // Refresh the students list
+      fetchStudents();
+      handleDeleteDialogClose();
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      setError('Failed to delete student. Please try again later.');
+    }
+  };
+
+  const handleDeleteHealthRecord = async () => {
+    try {
+      await axios.delete(`${HEALTH_RECORDS_API}/${recordToDelete.id}`);
+      // Update the health records list without refreshing
+      setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordToDelete.id));
+      handleDeleteHealthRecordDialogClose();
+    } catch (err) {
+      console.error('Error deleting health record:', err);
+      setError('Failed to delete health record. Please try again.');
     }
   };
 
@@ -269,17 +311,6 @@ const Dashboard = () => {
       } finally {
         setLoadingRecords(false);
       }
-    }
-  };
-
-  const handleDeleteHealthRecord = async (recordId) => {
-    try {
-      await axios.delete(`${HEALTH_RECORDS_API}/${recordId}`);
-      // Update the health records list without refreshing
-      setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
-    } catch (err) {
-      console.error('Error deleting health record:', err);
-      setError('Failed to delete health record. Please try again.');
     }
   };
 
@@ -392,6 +423,23 @@ const Dashboard = () => {
 
   const handleEditStudent = (studentId) => {
     navigate(`/student/edit/${studentId}`);
+  };
+
+  const handleHealthRecordSort = (property) => {
+    const isAsc = healthRecordOrderBy === property && healthRecordOrder === 'asc';
+    setHealthRecordOrder(isAsc ? 'desc' : 'asc');
+    setHealthRecordOrderBy(property);
+  };
+
+  const sortHealthRecords = (records) => {
+    return [...records].sort((a, b) => {
+      if (healthRecordOrderBy === 'recordDate') {
+        const dateA = new Date(a.recordDate);
+        const dateB = new Date(b.recordDate);
+        return healthRecordOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      return 0;
+    });
   };
 
   if (loading) {
@@ -565,12 +613,9 @@ const Dashboard = () => {
                       </IconButton>
                       <IconButton
                         color="error"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(student.id);
-                        }}
-                        title="Delete Student"
                         size="small"
+                        onClick={(e) => handleDeleteDialogOpen(student, e)}
+                        title="Delete Student"
                       >
                         <Trash2 {...iconProps} />
                       </IconButton>
@@ -620,8 +665,6 @@ const Dashboard = () => {
               Health Records for {selectedStudent?.firstName} {selectedStudent?.lastName}
             </Typography>
             <Button
-              component={Link}
-              to={`/health-records/new/${selectedStudent?.id}`}
               startIcon={<Plus size={20} />}
               variant="contained"
               color="primary"
@@ -642,7 +685,15 @@ const Dashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Record Date</TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={healthRecordOrderBy === 'recordDate'}
+                      direction={healthRecordOrderBy === 'recordDate' ? healthRecordOrder : 'asc'}
+                      onClick={() => handleHealthRecordSort('recordDate')}
+                    >
+                      Record Date
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell>Record Type</TableCell>
                   <TableCell>Height (cm)</TableCell>
                   <TableCell>Weight (kg)</TableCell>
@@ -737,7 +788,7 @@ const Dashboard = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  healthRecords.map((record) => (
+                  sortHealthRecords(healthRecords).map((record) => (
                     <TableRow 
                       key={record.id}
                       sx={{
@@ -771,7 +822,7 @@ const Dashboard = () => {
                           <IconButton
                             color="error"
                             size="small"
-                            onClick={() => handleDeleteHealthRecord(record.id)}
+                            onClick={() => handleDeleteHealthRecordDialogOpen(record)}
                           >
                             <Trash2 size={16} />
                           </IconButton>
@@ -795,12 +846,43 @@ const Dashboard = () => {
         </Paper>
       </Collapse>
 
-      <Dialog 
-        open={isHealthRecordFormOpen} 
-        onClose={handleHealthRecordFormClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the student record for{' '}
+            <strong>{studentToDelete ? `${studentToDelete.firstName} ${studentToDelete.lastName}` : ''}</strong>?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose}>Cancel</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteHealthRecordDialogOpen} onClose={handleDeleteHealthRecordDialogClose}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the health record from{' '}
+            <strong>{recordToDelete ? format(new Date(recordToDelete.recordDate), 'MMMM d, yyyy') : ''}</strong>{' '}
+            for student{' '}
+            <strong>{selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : ''}</strong>?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteHealthRecordDialogClose}>Cancel</Button>
+          <Button onClick={handleDeleteHealthRecord} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={isHealthRecordFormOpen} onClose={handleHealthRecordFormClose} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedHealthRecord ? 'Edit Health Record' : 'Add New Health Record'}
         </DialogTitle>
