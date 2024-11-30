@@ -1,11 +1,12 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { sequelize, User, Student, HealthRecord } = require('./models');
 const studentRoutes = require('./routes/students');
 const healthRecordRoutes = require('./routes/healthRecords');
 const authRoutes = require('./routes/auth');
 const seedData = require('./seeders/seed');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
@@ -13,6 +14,7 @@ const swaggerSpecs = require('./swagger');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -29,6 +31,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Health Records API' });
 });
 
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  });
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -39,8 +50,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server and sync database
-const start = async () => {
+// Database sync and server start
+const startServer = async () => {
   try {
     // Test database connection
     await sequelize.authenticate();
@@ -75,4 +86,4 @@ const start = async () => {
   }
 };
 
-start();
+startServer();

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import config from '../config';
 import {
   Container,
   Paper,
@@ -45,9 +46,6 @@ import {
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { format } from 'date-fns';
 import HealthRecordForm from './HealthRecordForm';
-
-const API_URL = 'http://localhost:5000/api/students';
-const HEALTH_RECORDS_API = 'http://localhost:5000/api/health-records';
 
 const iconProps = {
   size: 20,
@@ -191,12 +189,11 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(API_URL);
+      const response = await axios.get(`${config.apiUrl}/students`);
       setStudents(response.data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      setError('Failed to fetch students. Please try again later.');
-      setStudents([]);
+    } catch (err) {
+      setError('Failed to fetch students. Please try again.');
+      console.error('Error fetching students:', err);
     } finally {
       setLoading(false);
     }
@@ -228,7 +225,7 @@ const Dashboard = () => {
   const handleDelete = async () => {
     try {
       setError(null);
-      await axios.delete(`${API_URL}/${studentToDelete.id}`);
+      await axios.delete(`${config.apiUrl}/students/${studentToDelete.id}`);
       
       // If the deleted student was selected, clear the selection
       if (selectedStudent?.id === studentToDelete.id) {
@@ -240,20 +237,20 @@ const Dashboard = () => {
       fetchStudents();
       handleDeleteDialogClose();
     } catch (error) {
+      setError('Failed to delete student. Please try again.');
       console.error('Error deleting student:', error);
-      setError('Failed to delete student. Please try again later.');
     }
   };
 
   const handleDeleteHealthRecord = async () => {
     try {
-      await axios.delete(`${HEALTH_RECORDS_API}/${recordToDelete.id}`);
+      await axios.delete(`${config.apiUrl}/health-records/${recordToDelete.id}`);
       // Update the health records list without refreshing
       setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordToDelete.id));
       handleDeleteHealthRecordDialogClose();
     } catch (err) {
-      console.error('Error deleting health record:', err);
       setError('Failed to delete health record. Please try again.');
+      console.error('Error deleting health record:', err);
     }
   };
 
@@ -284,7 +281,7 @@ const Dashboard = () => {
         setSelectedStudent(student);
         
         try {
-          const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
+          const response = await axios.get(`${config.apiUrl}/health-records/student/${student.id}`);
           setHealthRecords(response.data);
         } catch (err) {
           console.error('Error fetching health records:', err);
@@ -302,7 +299,7 @@ const Dashboard = () => {
       setRecordsError(null);
 
       try {
-        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
+        const response = await axios.get(`${config.apiUrl}/health-records/student/${student.id}`);
         setHealthRecords(response.data);
       } catch (err) {
         console.error('Error fetching health records:', err);
@@ -338,7 +335,7 @@ const Dashboard = () => {
     setSelectedHealthRecord(null);
     if (refreshNeeded && selectedStudent) {
       try {
-        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
+        const response = await axios.get(`${config.apiUrl}/health-records/student/${selectedStudent.id}`);
         setHealthRecords(response.data);
       } catch (err) {
         console.error('Error fetching health records:', err);
@@ -360,13 +357,13 @@ const Dashboard = () => {
       };
 
       if (selectedHealthRecord) {
-        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord.id}`, recordData);
+        await axios.put(`${config.apiUrl}/health-records/${selectedHealthRecord.id}`, recordData);
       } else {
-        await axios.post(HEALTH_RECORDS_API, recordData);
+        await axios.post(`${config.apiUrl}/health-records`, recordData);
       }
       
       // Refresh health records
-      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
+      const response = await axios.get(`${config.apiUrl}/health-records/student/${selectedStudent.id}`);
       setHealthRecords(response.data);
       
       // Close form
