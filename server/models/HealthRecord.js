@@ -1,86 +1,130 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
 const { HealthRecord: HealthRecordEntity } = require('./entities/HealthRecord');
+const Student = require('./Student');
 
 class HealthRecord extends Model {
   toEntity(student = null) {
     return HealthRecordEntity.fromDatabase(this.toJSON(), student);
   }
+
+  calculateBMI() {
+    if (!this.height || !this.weight) return null;
+    
+    // Convert height from cm to meters
+    const heightInMeters = this.height / 100;
+    // Calculate BMI: weight (kg) / (height (m))²
+    const bmi = this.weight / (heightInMeters * heightInMeters);
+    return Math.round(bmi * 10) / 10; // Round to 1 decimal place
+  }
+
+  toJSON() {
+    const values = super.toJSON();
+    values.bmi = this.calculateBMI();
+    return values;
+  }
 }
 
-HealthRecord.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false
+HealthRecord.init({
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+    allowNull: false
+  },
+  studentId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'Students',
+      key: 'id'
     },
-    studentId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'Students',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
+  recordDate: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  recordType: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  weight: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    validate: {
+      min: 0,
+      max: 500 // Maximum weight in kg
     },
-    recordDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
+    comment: 'Weight in kilograms'
+  },
+  height: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    validate: {
+      min: 0,
+      max: 300 // Maximum height in cm
     },
-    recordType: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    weight: {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: 'Weight in kilograms'
-    },
-    height: {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-      comment: 'Height in centimeters'
-    },
-    bloodPressure: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    temperature: {
-      type: DataTypes.FLOAT,
-      allowNull: true
-    },
-    allergies: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    medications: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    medicalNotes: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    treatmentPlan: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    nextAppointment: {
-      type: DataTypes.DATE,
-      allowNull: true
+    comment: 'Height in centimeters'
+  },
+  bloodPressure: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  temperature: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    validate: {
+      min: 30, // Minimum reasonable temperature in Celsius
+      max: 45  // Maximum reasonable temperature in Celsius
     }
   },
-  {
-    sequelize,
-    modelName: 'HealthRecord',
-    tableName: 'HealthRecords',
-    timestamps: true
+  allergies: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  medications: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  medicalNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  treatmentPlan: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  nextAppointment: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
-);
+}, {
+  sequelize,
+  modelName: 'HealthRecord',
+  tableName: 'HealthRecords',
+  timestamps: true,
+  hooks: {
+    beforeValidate: (record) => {
+      // Convert empty strings to null
+      ['height', 'weight', 'temperature'].forEach(field => {
+        if (record[field] === '') {
+          record[field] = null;
+        }
+      });
+    },
+    beforeSave: (record) => {
+      // Ensure numeric fields are stored as numbers
+      ['height', 'weight', 'temperature'].forEach(field => {
+        if (record[field] !== null) {
+          record[field] = parseFloat(record[field]);
+        }
+      });
+    }
+  }
+});
 
 // Define association with Student
 HealthRecord.associate = (models) => {
@@ -89,28 +133,6 @@ HealthRecord.associate = (models) => {
     targetKey: 'id',
     as: 'student'
   });
-};
-
-// Instance methods
-HealthRecord.prototype.getBMI = function() {
-  if (!this.weight || !this.height) {
-    return null;
-  }
-  // Convert height from cm to meters
-  const heightInMeters = this.height / 100;
-  // Calculate BMI: weight (kg) / height² (m²)
-  const bmi = this.weight / (heightInMeters * heightInMeters);
-  return Math.round(bmi * 10) / 10; // Round to 1 decimal place
-};
-
-HealthRecord.prototype.getBMICategory = function() {
-  const bmi = this.getBMI();
-  if (!bmi) return null;
-  
-  if (bmi < 18.5) return 'Underweight';
-  if (bmi < 25) return 'Normal weight';
-  if (bmi < 30) return 'Overweight';
-  return 'Obese';
 };
 
 module.exports = HealthRecord;

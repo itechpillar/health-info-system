@@ -15,7 +15,10 @@ import {
   Fab,
   TablePagination,
   Alert,
-  Button
+  Button,
+  Tooltip,
+  Chip,
+  Container
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -34,100 +37,49 @@ const formatDate = (dateString) => {
   return isValid(date) ? format(date, 'MMM d, yyyy') : 'Invalid Date';
 };
 
+const BMIDisplay = ({ bmi }) => {
+  // Simple display for debugging
+  return <span>{bmi ? bmi.toFixed(1) : 'N/A'}</span>;
+};
+
 const HealthRecordList = () => {
   const { id: studentId } = useParams();
-  const [students, setStudents] = useState([]);
-  const [currentStudent, setCurrentStudent] = useState(null);
-  const [healthRecords, setHealthRecords] = useState({});
+  const navigate = useNavigate();
+  const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    if (studentId) {
-      fetchSingleStudent();
-    } else {
-      fetchAllStudents();
-    }
+    fetchHealthRecords();
   }, [studentId]);
 
-  const fetchSingleStudent = async () => {
+  const fetchHealthRecords = async () => {
     try {
       setLoading(true);
-      const [studentResponse, recordsResponse] = await Promise.all([
-        axios.get(`${API_URL}/${studentId}`),
-        axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`)
-      ]);
+      console.log('Fetching health records for student:', studentId);
       
-      setCurrentStudent(studentResponse.data);
-      setHealthRecords({ [studentId]: recordsResponse.data });
+      const response = await axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`);
+      console.log('Health records response:', response.data);
+      
+      // Directly set the records without processing
+      setHealthRecords(response.data);
       setError(null);
     } catch (error) {
-      console.error('Error fetching student data:', error);
-      setError('Failed to fetch student health records');
+      console.error('Error fetching health records:', error);
+      setError('Failed to fetch health records');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAllStudents = async () => {
+  const handleDelete = async (recordId) => {
     try {
-      setLoading(true);
-      const response = await axios.get(API_URL);
-      
-      if (!Array.isArray(response.data)) {
-        setError('Invalid data format received');
-        return;
-      }
-      
-      setStudents(response.data);
-      
-      const healthRecordsData = {};
-      for (const student of response.data) {
-        try {
-          const recordsResponse = await axios.get(`${HEALTH_RECORDS_API_URL}/student/${student.id}`);
-          healthRecordsData[student.id] = recordsResponse.data;
-        } catch (err) {
-          console.error(`Error fetching health records for student ${student.id}:`, err);
-          healthRecordsData[student.id] = [];
-        }
-      }
-      setHealthRecords(healthRecordsData);
-      setError(null);
+      await axios.delete(`${HEALTH_RECORDS_API_URL}/${recordId}`);
+      await fetchHealthRecords();
     } catch (error) {
-      console.error('Error fetching students:', error);
-      setError('Failed to fetch students');
-    } finally {
-      setLoading(false);
+      console.error('Error deleting record:', error);
+      setError('Failed to delete record');
     }
-  };
-
-  const handleDelete = async (recordId, studentId) => {
-    if (window.confirm('Are you sure you want to delete this health record?')) {
-      try {
-        await axios.delete(`${HEALTH_RECORDS_API_URL}/${recordId}`);
-        // Refresh the health records for this student
-        const recordsResponse = await axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`);
-        setHealthRecords(prev => ({
-          ...prev,
-          [studentId]: recordsResponse.data
-        }));
-      } catch (error) {
-        console.error('Error deleting health record:', error);
-        setError('Failed to delete health record');
-      }
-    }
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
   if (loading) {
@@ -138,119 +90,90 @@ const HealthRecordList = () => {
     );
   }
 
-  const renderHealthRecordsTable = (studentId, records = []) => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Record Date</TableCell>
-            <TableCell>Record Type</TableCell>
-            <TableCell>Height (cm)</TableCell>
-            <TableCell>Weight (kg)</TableCell>
-            <TableCell>Blood Pressure</TableCell>
-            <TableCell>Temperature (°C)</TableCell>
-            <TableCell>Medical Notes</TableCell>
-            <TableCell>Next Appointment</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {records.length > 0 ? (
-            records.map((record) => (
-              <TableRow key={record.id}>
-                <TableCell>{formatDate(record.recordDate)}</TableCell>
-                <TableCell>{record.recordType}</TableCell>
-                <TableCell>{record.height || 'N/A'}</TableCell>
-                <TableCell>{record.weight || 'N/A'}</TableCell>
-                <TableCell>{record.bloodPressure || 'N/A'}</TableCell>
-                <TableCell>{record.temperature || 'N/A'}</TableCell>
-                <TableCell>{record.medicalNotes || 'N/A'}</TableCell>
-                <TableCell>{formatDate(record.nextAppointment)}</TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={() => navigate(`/health-records/edit/${record.id}`)}
-                    color="primary"
-                    size="small"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(record.id, studentId)}
-                    color="error"
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={9} align="center">
-                No health records found
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {studentId && (
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate('/students')}
-              variant="outlined"
-            >
-              Back to Students
-            </Button>
-          )}
-          <Typography variant="h5">
-            {currentStudent 
-              ? `Health Records - ${currentStudent.firstName} ${currentStudent.lastName}`
-              : 'All Health Records'
-            }
-          </Typography>
-        </Box>
+    <Container>
+      {/* Debug display */}
+      <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5' }}>
+        <Typography variant="h6">Debug Info</Typography>
+        <pre>
+          {JSON.stringify(healthRecords.map(r => ({ id: r.id, bmi: r.bmi })), null, 2)}
+        </pre>
+      </Box>
+
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/students')}
+        >
+          Back to Students
+        </Button>
         <Fab
           color="primary"
-          aria-label="add"
-          onClick={() => navigate('/health-records/new')}
+          onClick={() => navigate(`/health-records/new/${studentId}`)}
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
         >
           <AddIcon />
         </Fab>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      {studentId ? (
-        <Box sx={{ mb: 4 }}>
-          {renderHealthRecordsTable(studentId, healthRecords[studentId])}
-        </Box>
-      ) : (
-        students.map((student) => (
-          <Box key={student.id} sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {student.firstName} {student.lastName}
-            </Typography>
-            {renderHealthRecordsTable(student.id, healthRecords[student.id])}
-          </Box>
-        ))
-      )}
-
-      <TablePagination
-        component="div"
-        count={students.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-    </Box>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Date</TableCell>
+              <TableCell>Height (cm)</TableCell>
+              <TableCell>Weight (kg)</TableCell>
+              <TableCell>BMI</TableCell>
+              <TableCell>Blood Pressure</TableCell>
+              <TableCell>Temperature (°C)</TableCell>
+              <TableCell>Notes</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {healthRecords.length > 0 ? (
+              healthRecords.map((record) => {
+                console.log('Rendering record with BMI:', record.bmi);
+                
+                return (
+                  <TableRow key={record.id}>
+                    <TableCell>{formatDate(record.recordDate)}</TableCell>
+                    <TableCell>{record.height}</TableCell>
+                    <TableCell>{record.weight}</TableCell>
+                    <TableCell>{record.bmi ? record.bmi.toFixed(1) : 'N/A'}</TableCell>
+                    <TableCell>{record.bloodPressure || 'N/A'}</TableCell>
+                    <TableCell>{record.temperature || 'N/A'}</TableCell>
+                    <TableCell>{record.medicalNotes || 'N/A'}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => navigate(`/health-records/edit/${record.id}`)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(record.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  No health records found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Container>
   );
 };
 

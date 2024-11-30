@@ -1,155 +1,100 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
+  Container,
   Paper,
-  Grid,
   TextField,
   Button,
   Typography,
   Box,
-  MenuItem,
-  Stepper,
-  Step,
-  StepLabel,
   Alert,
-  CircularProgress,
-  InputAdornment,
-  Divider,
-  Autocomplete,
+  CircularProgress
 } from '@mui/material';
-import {
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-  NavigateNext as NavigateNextIcon,
-  NavigateBefore as NavigateBeforeIcon,
-} from '@mui/icons-material';
-import PhysicalMeasurements from './PhysicalMeasurements';
+import { ArrowLeft } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
-const RECORD_TYPES = ['Regular Checkup', 'Vaccination', 'Illness', 'Injury', 'Other'];
-
-const steps = ['Student Selection', 'Medical Details', 'Review'];
+const API_URL = 'http://localhost:5000/api/health-records';
 
 const HealthRecordForm = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
+  const { id, studentId } = useParams();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const studentIdFromUrl = searchParams.get('studentId');
-  
-  const [activeStep, setActiveStep] = useState(studentIdFromUrl ? 1 : 0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [students, setStudents] = useState([]);
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const { studentName, returnPath } = location.state || {};
+  const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
-    studentId: studentIdFromUrl || id || '',  
-    recordType: '',
     recordDate: new Date().toISOString().split('T')[0],
-    allergies: '',
-    medications: '',
-    medicalConditions: '',
-    diagnosis: '',
-    treatment: '',
-    notes: '',
-    nextCheckupDate: '',
+    recordType: '',
+    height: '',
     weight: '',
-    height: ''
+    bloodPressure: '',
+    temperature: '',
+    nextAppointment: '',
+    notes: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-  const fetchStudents = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/students`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setStudents(response.data);
-      if (id) {
-        const student = response.data.find(s => s.id === id);
-        if (student) {
-          setSelectedStudent(student);
-          setFormData(prev => ({ ...prev, studentId: student.id }));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      if (error.response?.status === 401) {
-        navigate('/login');
-      }
+  useEffect(() => {
+    if (isEditMode) {
+      fetchHealthRecord();
     }
-  }, [navigate, id]);
+  }, [id]);
 
-  const fetchRecord = useCallback(async () => {
-    if (!id) return;
+  const fetchHealthRecord = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/health-records/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axios.get(`${API_URL}/${id}`);
+      const record = response.data;
+      setFormData({
+        recordDate: record.recordDate?.split('T')[0] || '',
+        recordType: record.recordType || '',
+        height: record.height || '',
+        weight: record.weight || '',
+        bloodPressure: record.bloodPressure || '',
+        temperature: record.temperature || '',
+        nextAppointment: record.nextAppointment?.split('T')[0] || '',
+        notes: record.notes || ''
       });
-      
-      setFormData(prevData => ({
-        ...prevData,
-        ...response.data,
-        studentId: response.data.studentId || response.data.Student?.id || ''
-      }));
-
-      const student = students.find(s => s.id === (response.data.studentId || response.data.Student?.id));
-      if (student) {
-        setSelectedStudent(student);
-      }
-    } catch (error) {
-      console.error('Error fetching record:', error);
-      setError('Failed to load record');
-      if (error.response?.status === 401) {
-        navigate('/login');
-      }
+    } catch (err) {
+      console.error('Error fetching health record:', err);
+      setError('Failed to fetch health record details');
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, students]);
+  };
 
-  const fetchStudentDetails = async (studentId) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await axios.get(`${API_URL}/students/${studentId}`);
-      setSelectedStudent(response.data);
-    } catch (error) {
-      console.error('Error fetching student details:', error);
-      setError('Failed to fetch student details');
+      const payload = {
+        ...formData,
+        studentId: studentId || formData.studentId
+      };
+
+      if (isEditMode) {
+        await axios.put(`${API_URL}/${id}`, payload);
+      } else {
+        await axios.post(API_URL, payload);
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        navigate(returnPath || '/', { replace: true });
+      }, 1500);
+    } catch (err) {
+      console.error('Error saving health record:', err);
+      setError('Failed to save health record. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchStudents();
-    if (studentIdFromUrl) {
-      fetchStudentDetails(studentIdFromUrl);
-    }
-  }, [studentIdFromUrl]);
-
-  useEffect(() => {
-    if (students.length > 0) {
-      fetchRecord();
-    }
-  }, [fetchRecord, students]);
-
-  const handleStudentSelect = (event, student) => {
-    setSelectedStudent(student);
-    if (student) {
-      setFormData(prev => ({
-        ...prev,
-        studentId: student.id
-      }));
-    }
-  };
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -157,288 +102,143 @@ const HealthRecordForm = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedStudent) {
-      setError('Please select a student');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      
-      const submitData = {
-        ...formData,
-        studentId: selectedStudent.id
-      };
-
-      if (id) {
-        await axios.put(`${API_URL}/health-records/${id}`, submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      } else {
-        await axios.post(`${API_URL}/health-records`, submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/students');
-      }, 1500);
-    } catch (error) {
-      console.error('Error saving record:', error);
-      setError(error.response?.data?.message || 'Failed to save record');
-      if (error.response?.status === 401) {
-        navigate('/login');
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleCancel = () => {
+    navigate(returnPath || '/', { replace: true });
   };
 
-  const handleNext = () => {
-    setActiveStep((prev) => prev + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
-  };
-
-  if (loading) {
+  if (loading && !formData.recordType) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
       </Box>
     );
   }
 
-  const renderStudentSelection = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Autocomplete
-          value={selectedStudent}
-          onChange={handleStudentSelect}
-          options={students}
-          getOptionLabel={(student) => `${student.firstName} ${student.lastName}`}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Select Student"
-              required
-              fullWidth
-              error={!selectedStudent && error}
-              helperText={!selectedStudent && error ? 'Please select a student' : ''}
-            />
-          )}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          select
-          label="Record Type"
-          name="recordType"
-          value={formData.recordType}
-          onChange={handleChange}
-          fullWidth
-          required
-        >
-          {RECORD_TYPES.map((type) => (
-            <MenuItem key={type} value={type}>
-              {type}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          type="date"
-          label="Record Date"
-          name="recordDate"
-          value={formData.recordDate}
-          onChange={handleChange}
-          fullWidth
-          required
-          InputLabelProps={{ shrink: true }}
-        />
-      </Grid>
-    </Grid>
-  );
-
-  const renderMedicalDetails = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <PhysicalMeasurements formData={formData} handleChange={handleChange} />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Allergies"
-          name="allergies"
-          value={formData.allergies}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Current Medications"
-          name="medications"
-          value={formData.medications}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Medical Conditions"
-          name="medicalConditions"
-          value={formData.medicalConditions}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Diagnosis"
-          name="diagnosis"
-          value={formData.diagnosis}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Treatment"
-          name="treatment"
-          value={formData.treatment}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          type="date"
-          label="Next Checkup Date"
-          name="nextCheckupDate"
-          value={formData.nextCheckupDate}
-          onChange={handleChange}
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-        />
-      </Grid>
-    </Grid>
-  );
-
-  const renderReview = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography variant="h6">
-          Health Record for {selectedStudent?.firstName} {selectedStudent?.lastName}
-        </Typography>
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Additional Notes"
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          fullWidth
-          multiline
-          rows={4}
-        />
-      </Grid>
-    </Grid>
-  );
-
   return (
-    <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: 'auto', my: 4 }}>
-      <Box mb={4}>
-        <Typography variant="h5" gutterBottom>
-          {id ? 'Edit Health Record' : 'New Health Record'}
-        </Typography>
-        <Stepper activeStep={activeStep} alternativeLabel>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Health record saved successfully!
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        {activeStep === 0 && renderStudentSelection()}
-        {activeStep === 1 && renderMedicalDetails()}
-        {activeStep === 2 && renderReview()}
-
-        <Box mt={3} display="flex" justifyContent="space-between">
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/health-records')}
+            startIcon={<ArrowLeft />}
+            onClick={handleCancel}
+            sx={{ minWidth: 'auto' }}
           >
-            Back to List
+            Back
           </Button>
-          <Box>
-            {activeStep > 0 && (
-              <Button
-                startIcon={<NavigateBeforeIcon />}
-                onClick={handleBack}
-                sx={{ mr: 1 }}
-              >
-                Back
-              </Button>
-            )}
-            {activeStep < steps.length - 1 ? (
-              <Button
-                variant="contained"
-                endIcon={<NavigateNextIcon />}
-                onClick={handleNext}
-                disabled={!selectedStudent}
-              >
-                Next
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<SaveIcon />}
-                disabled={loading}
-              >
-                Save Record
-              </Button>
-            )}
-          </Box>
+          <Typography variant="h5" component="h1">
+            {isEditMode ? 'Edit' : 'New'} Health Record
+            {studentName && <Typography variant="subtitle1" color="text.secondary">
+              for {studentName}
+            </Typography>}
+          </Typography>
         </Box>
-      </form>
-    </Paper>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            Health record {isEditMode ? 'updated' : 'created'} successfully!
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <Box sx={{ display: 'grid', gap: 3, mb: 3 }}>
+            <TextField
+              fullWidth
+              label="Record Date"
+              type="date"
+              name="recordDate"
+              value={formData.recordDate}
+              onChange={handleInputChange}
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
+              label="Record Type"
+              name="recordType"
+              value={formData.recordType}
+              onChange={handleInputChange}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Height (cm)"
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleInputChange}
+              inputProps={{ step: "0.1" }}
+            />
+            <TextField
+              fullWidth
+              label="Weight (kg)"
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleInputChange}
+              inputProps={{ step: "0.1" }}
+            />
+            <TextField
+              fullWidth
+              label="Blood Pressure"
+              name="bloodPressure"
+              value={formData.bloodPressure}
+              onChange={handleInputChange}
+            />
+            <TextField
+              fullWidth
+              label="Temperature (°F)"
+              type="number"
+              name="temperature"
+              value={formData.temperature}
+              onChange={handleInputChange}
+              inputProps={{ step: "0.1" }}
+            />
+            <TextField
+              fullWidth
+              label="Next Appointment"
+              type="date"
+              name="nextAppointment"
+              value={formData.nextAppointment}
+              onChange={handleInputChange}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
+              label="Notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              multiline
+              rows={4}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              onClick={handleCancel}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : (isEditMode ? 'Update' : 'Create')}
+            </Button>
+          </Box>
+        </form>
+      </Paper>
+    </Container>
   );
 };
 

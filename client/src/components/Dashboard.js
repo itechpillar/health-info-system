@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   Container,
@@ -20,7 +20,9 @@ import {
   InputAdornment,
   Button,
   TableSortLabel,
-  Collapse
+  Collapse,
+  Chip,
+  Tooltip
 } from '@mui/material';
 import {
   Search,
@@ -33,8 +35,9 @@ import {
   User,
   Phone,
   GraduationCap,
-  SettingsIcon
+  Settings as SettingsIcon
 } from 'lucide-react';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { format } from 'date-fns';
 
 const API_URL = 'http://localhost:5000/api/students';
@@ -45,6 +48,111 @@ const iconProps = {
   strokeWidth: 1.5
 };
 
+const BMI_CATEGORIES = {
+  severelyUnderweight: {
+    range: [0, 16],
+    label: 'Severe',
+    color: '#1565C0',  // Dark blue
+    backgroundColor: '#E3F2FD',
+    description: 'BMI < 16: Severely underweight - Medical attention recommended'
+  },
+  underweight: {
+    range: [16, 18.5],
+    label: 'Low',
+    color: '#2196F3',  // Blue
+    backgroundColor: '#BBDEFB',
+    description: 'BMI 16-18.5: Underweight - May need nutritional assessment'
+  },
+  normal: {
+    range: [18.5, 25],
+    label: 'Normal',
+    color: '#2E7D32',  // Green
+    backgroundColor: '#E8F5E9',
+    description: 'BMI 18.5-25: Healthy weight range'
+  },
+  overweight: {
+    range: [25, 30],
+    label: 'High',
+    color: '#ED6C02',  // Orange
+    backgroundColor: '#FFF3E0',
+    description: 'BMI 25-30: Overweight - Lifestyle changes may be beneficial'
+  },
+  obese: {
+    range: [30, 35],
+    label: 'Very High',
+    color: '#D32F2F',  // Red
+    backgroundColor: '#FFEBEE',
+    description: 'BMI 30-35: Obese Class I - Health risks increased'
+  },
+  severelyObese: {
+    range: [35, 40],
+    label: 'Severe',
+    color: '#B71C1C',  // Dark red
+    backgroundColor: '#FFCDD2',
+    description: 'BMI 35-40: Obese Class II - High health risk'
+  },
+  morbidallyObese: {
+    range: [40, Infinity],
+    label: 'Very Severe',
+    color: '#801313',  // Darker red
+    backgroundColor: '#EF9A9A',
+    description: 'BMI > 40: Obese Class III - Very high health risk'
+  }
+};
+
+const getBMICategory = (bmi) => {
+  if (!bmi || isNaN(bmi)) return null;
+  const bmiValue = typeof bmi === 'string' ? parseFloat(bmi) : bmi;
+  
+  for (const [category, data] of Object.entries(BMI_CATEGORIES)) {
+    if (bmiValue >= data.range[0] && bmiValue < data.range[1]) {
+      return { category, ...data };
+    }
+  }
+  return null;
+};
+
+const BMIDisplay = ({ bmi }) => {
+  if (!bmi || isNaN(bmi)) return 'N/A';
+  
+  const bmiValue = typeof bmi === 'string' ? parseFloat(bmi) : bmi;
+  const category = getBMICategory(bmiValue);
+  
+  if (!category) return bmiValue.toFixed(1);
+  
+  return (
+    <Tooltip 
+      title={
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ marginBottom: '4px' }}><strong>{category.description}</strong></div>
+          <div style={{ fontSize: '0.9em', opacity: 0.9 }}>
+            Click for detailed health information
+          </div>
+        </div>
+      } 
+      arrow
+    >
+      <Chip
+        label={`${bmiValue.toFixed(1)} (${category.label})`}
+        size="small"
+        sx={{
+          color: category.color,
+          backgroundColor: category.backgroundColor,
+          fontWeight: 'medium',
+          '&:hover': {
+            backgroundColor: category.backgroundColor,
+            opacity: 0.9,
+          },
+          minWidth: '120px',
+          '& .MuiChip-label': {
+            padding: '0 8px'
+          }
+        }}
+      />
+    </Tooltip>
+  );
+};
+
 const Dashboard = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,11 +160,13 @@ const Dashboard = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('firstName');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [healthRecords, setHealthRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
+  const [recordsError, setRecordsError] = useState(null);
+  const [showRecords, setShowRecords] = useState(false);
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('firstName');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -99,67 +209,93 @@ const Dashboard = () => {
     }
   };
 
-  const handleViewRecords = async (e, student) => {
-    e.stopPropagation(); // Prevent row click event
-    if (selectedStudent?.id === student.id) {
-      setSelectedStudent(null);
-      setHealthRecords([]);
-      return;
+  const handleViewHealthRecords = async (student, event) => {
+    // If event exists (icon click), prevent propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
     
-    setLoadingRecords(true);
-    setSelectedStudent(student);
-    
-    try {
-      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
-      setHealthRecords(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching health records:', error);
-      setError('Failed to fetch health records');
-      setHealthRecords([]);
-    } finally {
-      setLoadingRecords(false);
+    if (selectedStudent?.id === student.id && showRecords) {
+      // Fade out first, then close
+      setLoadingRecords(true);
+      setTimeout(() => {
+        setShowRecords(false);
+        setSelectedStudent(null);
+        setHealthRecords([]);
+        setLoadingRecords(false);
+      }, 150);
+      return;
+    }
+
+    // If different student, fade out current records first
+    if (showRecords) {
+      setLoadingRecords(true);
+      setTimeout(async () => {
+        setShowRecords(true);
+        setSelectedStudent(student);
+        
+        try {
+          const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
+          setHealthRecords(response.data);
+        } catch (err) {
+          console.error('Error fetching health records:', err);
+          setRecordsError('Failed to fetch health records. Please try again.');
+          setHealthRecords([]);
+        } finally {
+          setLoadingRecords(false);
+        }
+      }, 150);
+    } else {
+      // First time showing records
+      setShowRecords(true);
+      setSelectedStudent(student);
+      setLoadingRecords(true);
+      setRecordsError(null);
+
+      try {
+        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
+        setHealthRecords(response.data);
+      } catch (err) {
+        console.error('Error fetching health records:', err);
+        setRecordsError('Failed to fetch health records. Please try again.');
+        setHealthRecords([]);
+      } finally {
+        setLoadingRecords(false);
+      }
     }
   };
 
-  const handleRowClick = async (student) => {
-    if (selectedStudent?.id === student.id) {
-      setSelectedStudent(null);
-      setHealthRecords([]);
-      return;
-    }
-    
-    setLoadingRecords(true);
-    setSelectedStudent(student);
-    
+  const handleDeleteHealthRecord = async (recordId) => {
     try {
-      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
-      setHealthRecords(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching health records:', error);
-      setError('Failed to fetch health records');
-      setHealthRecords([]);
-    } finally {
-      setLoadingRecords(false);
-    }
-  };
-
-  const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this health record?')) {
-      return;
-    }
-    
-    try {
-      setError(null);
       await axios.delete(`${HEALTH_RECORDS_API}/${recordId}`);
-      
-      // Only update the health records array, don't refetch
+      // Update the health records list without refreshing
       setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
-    } catch (error) {
-      console.error('Error deleting health record:', error);
-      setError('Failed to delete health record. Please try again later.');
+    } catch (err) {
+      console.error('Error deleting health record:', err);
+      setError('Failed to delete health record. Please try again.');
+    }
+  };
+
+  const handleEditHealthRecord = (record, e) => {
+    e.preventDefault();
+    navigate(`/health-records/edit/${record.id}`, {
+      state: {
+        studentName: `${selectedStudent.firstName} ${selectedStudent.lastName}`,
+        returnPath: '/'
+      }
+    });
+  };
+
+  const handleAddHealthRecord = (e) => {
+    e.preventDefault();
+    if (selectedStudent) {
+      navigate(`/health-records/new/${selectedStudent.id}`, { 
+        state: { 
+          studentName: `${selectedStudent.firstName} ${selectedStudent.lastName}`,
+          returnPath: '/'
+        }
+      });
     }
   };
 
@@ -220,10 +356,6 @@ const Dashboard = () => {
 
   const handleEditStudent = (studentId) => {
     navigate(`/student/edit/${studentId}`);
-  };
-
-  const handleViewHealthRecords = (studentId) => {
-    navigate(`/student/${studentId}/health-records`);
   };
 
   if (loading) {
@@ -360,7 +492,7 @@ const Dashboard = () => {
                   key={student.id}
                   hover
                   selected={selectedStudent?.id === student.id}
-                  onClick={() => handleRowClick(student)}
+                  onClick={() => handleViewHealthRecords(student)}
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>
@@ -378,7 +510,7 @@ const Dashboard = () => {
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', minWidth: 120 }}>
                       <IconButton
                         color="primary"
-                        onClick={(e) => handleViewRecords(e, student)}
+                        onClick={(e) => handleViewHealthRecords(student, e)}
                         title="View Health Records"
                         size="small"
                       >
@@ -438,23 +570,40 @@ const Dashboard = () => {
         />
       </Paper>
 
-      {selectedStudent && (
-        <Paper sx={{ width: '100%', mb: 2, overflow: 'hidden', borderRadius: 2 }}>
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" component="h2">
-              Health Records for {selectedStudent.firstName} {selectedStudent.lastName}
+      <Collapse in={showRecords && selectedStudent !== null} timeout={300}>
+        <Paper 
+          sx={{ 
+            mt: 2, 
+            p: 2,
+            opacity: loadingRecords ? 0.7 : 1,
+            transition: 'all 0.3s ease-in-out'
+          }}
+        >
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" component="div">
+              Health Records for {selectedStudent?.firstName} {selectedStudent?.lastName}
             </Typography>
             <Button
+              component={Link}
+              to={`/health-records/new/${selectedStudent?.id}`}
+              startIcon={<Plus size={20} />}
               variant="contained"
               color="primary"
-              startIcon={<Plus />}
-              onClick={() => navigate(`/health-records/add/${selectedStudent.id}`)}
+              onClick={handleAddHealthRecord}
+              disabled={loadingRecords}
             >
-              Add Health Record
+              Add Record
             </Button>
           </Box>
+
+          {recordsError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {recordsError}
+            </Alert>
+          )}
+
           <TableContainer>
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell>Record Date</TableCell>
@@ -464,25 +613,102 @@ const Dashboard = () => {
                   <TableCell>Blood Pressure</TableCell>
                   <TableCell>Temperature (°F)</TableCell>
                   <TableCell>Next Appointment</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FitnessCenterIcon />
+                      BMI
+                    </Box>
+                  </TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loadingRecords ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      <CircularProgress size={24} />
+                    <TableCell 
+                      colSpan={9} 
+                      align="center" 
+                      sx={{ 
+                        height: '200px',
+                        position: 'relative',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'rgba(255, 255, 255, 0.8)',
+                          backdropFilter: 'blur(4px)',
+                          zIndex: 1
+                        }
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 2,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <CircularProgress size={32} />
+                        <Typography variant="body2" color="text.secondary">
+                          Loading health records...
+                        </Typography>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ) : healthRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      No health records found
+                    <TableCell 
+                      colSpan={9} 
+                      align="center"
+                      sx={{ 
+                        height: '200px',
+                        position: 'relative'
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <Typography variant="body1" color="text.secondary">
+                          No health records found
+                        </Typography>
+                        <Button
+                          startIcon={<Plus size={16} />}
+                          variant="outlined"
+                          size="small"
+                          onClick={handleAddHealthRecord}
+                        >
+                          Add First Record
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ) : (
                   healthRecords.map((record) => (
-                    <TableRow key={record.id}>
+                    <TableRow 
+                      key={record.id}
+                      sx={{
+                        opacity: loadingRecords ? 0.5 : 1,
+                        transition: 'opacity 0.2s ease-in-out'
+                      }}
+                    >
                       <TableCell>{format(new Date(record.recordDate), 'MMM d, yyyy')}</TableCell>
                       <TableCell>{record.recordType}</TableCell>
                       <TableCell>{record.height || 'N/A'}</TableCell>
@@ -494,21 +720,24 @@ const Dashboard = () => {
                           ? format(new Date(record.nextAppointment), 'MMM d, yyyy')
                           : 'N/A'}
                       </TableCell>
+                      <TableCell>
+                        <BMIDisplay bmi={record.bmi} />
+                      </TableCell>
                       <TableCell align="right">
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                           <IconButton
                             color="info"
                             size="small"
-                            onClick={() => navigate(`/health-records/edit/${record.id}`)}
+                            onClick={(e) => handleEditHealthRecord(record, e)}
                           >
-                            <Edit {...iconProps} />
+                            <Edit size={16} />
                           </IconButton>
                           <IconButton
                             color="error"
                             size="small"
-                            onClick={() => handleDeleteRecord(record.id)}
+                            onClick={() => handleDeleteHealthRecord(record.id)}
                           >
-                            <Trash2 {...iconProps} />
+                            <Trash2 size={16} />
                           </IconButton>
                         </Box>
                       </TableCell>
@@ -519,7 +748,7 @@ const Dashboard = () => {
             </Table>
           </TableContainer>
         </Paper>
-      )}
+      </Collapse>
     </Container>
   );
 };

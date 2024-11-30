@@ -2,44 +2,39 @@ class HealthRecord {
   constructor({
     id,
     studentId,
-    recordDate,
-    recordType,
-    allergies,
-    medications,
-    medicalConditions,
-    diagnosis,
-    treatment,
+    date,
+    height,
+    weight,
+    bloodPressure,
+    temperature,
     notes,
-    nextCheckupDate,
-    createdAt,
-    updatedAt,
+    bmi,
     student = null
   }) {
     this.id = id;
     this.studentId = studentId;
-    this.recordDate = recordDate;
-    this.recordType = recordType;
-    this.allergies = allergies;
-    this.medications = medications;
-    this.medicalConditions = medicalConditions;
-    this.diagnosis = diagnosis;
-    this.treatment = treatment;
+    this.date = date;
+    this.height = height;
+    this.weight = weight;
+    this.bloodPressure = bloodPressure;
+    this.temperature = temperature;
     this.notes = notes;
-    this.nextCheckupDate = nextCheckupDate;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
+    this.bmi = bmi;
     this.student = student;
   }
 
-  static fromDatabase(dbRecord, student = null) {
+  static fromDatabase(data, student = null) {
     return new HealthRecord({
-      ...dbRecord,
-      student: student ? {
-        id: student.id,
-        studentId: student.studentId,
-        firstName: student.firstName,
-        lastName: student.lastName
-      } : null
+      id: data.id,
+      studentId: data.studentId,
+      date: data.date,
+      height: data.height,
+      weight: data.weight,
+      bloodPressure: data.bloodPressure,
+      temperature: data.temperature,
+      notes: data.notes,
+      bmi: data.bmi,
+      student
     });
   }
 
@@ -47,17 +42,13 @@ class HealthRecord {
     return {
       id: this.id,
       studentId: this.studentId,
-      recordDate: this.recordDate,
-      recordType: this.recordType,
-      allergies: this.allergies,
-      medications: this.medications,
-      medicalConditions: this.medicalConditions,
-      diagnosis: this.diagnosis,
-      treatment: this.treatment,
+      date: this.date,
+      height: this.height,
+      weight: this.weight,
+      bloodPressure: this.bloodPressure,
+      temperature: this.temperature,
       notes: this.notes,
-      nextCheckupDate: this.nextCheckupDate,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      bmi: this.bmi,
       student: this.student
     };
   }
@@ -68,7 +59,7 @@ class HealthRecord {
   }
 
   getDaysSinceRecord() {
-    const recordDate = new Date(this.recordDate);
+    const recordDate = new Date(this.date);
     const today = new Date();
     const diffTime = Math.abs(today - recordDate);
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -84,8 +75,7 @@ class HealthRecord {
 
   getRecordSummary() {
     return {
-      date: this.recordDate,
-      type: this.recordType,
+      date: this.date,
       diagnosis: this.diagnosis,
       treatment: this.treatment,
       followUpRequired: this.isFollowUpRequired(),
