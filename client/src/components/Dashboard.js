@@ -19,6 +19,7 @@ import {
   TextField,
   InputAdornment,
   Button,
+  TableSortLabel,
   Collapse
 } from '@mui/material';
 import {
@@ -49,8 +50,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(3);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('firstName');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [healthRecords, setHealthRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
@@ -174,10 +177,54 @@ const Dashboard = () => {
     setPage(0);
   };
 
-  const filteredStudents = students.filter((student) => {
-    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
-    return fullName.includes(searchQuery.toLowerCase());
-  });
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const getComparator = (order, orderBy) => {
+    return order === 'desc'
+      ? (a, b) => descendingComparator(a, b, orderBy)
+      : (a, b) => -descendingComparator(a, b, orderBy);
+  };
+
+  const descendingComparator = (a, b, orderBy) => {
+    if (orderBy === 'name') {
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+      return nameB.localeCompare(nameA);
+    }
+    if (orderBy === 'dateOfBirth') {
+      return new Date(b.dateOfBirth) - new Date(a.dateOfBirth);
+    }
+    if (orderBy === 'grade') {
+      return Number(b.grade) - Number(a.grade);
+    }
+    const valueA = (a[orderBy] || '').toLowerCase();
+    const valueB = (b[orderBy] || '').toLowerCase();
+    return valueB.localeCompare(valueA);
+  };
+
+  const sortedStudents = React.useMemo(() => {
+    const filtered = students.filter((student) => {
+      const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+      return fullName.includes(searchQuery.toLowerCase());
+    });
+    return filtered.sort(getComparator(order, orderBy));
+  }, [students, searchQuery, order, orderBy]);
+
+  const handleAddStudent = () => {
+    navigate('/student/add');
+  };
+
+  const handleEditStudent = (studentId) => {
+    navigate(`/student/edit/${studentId}`);
+  };
+
+  const handleViewHealthRecords = (studentId) => {
+    navigate(`/student/${studentId}/health-records`);
+  };
 
   if (loading) {
     return (
@@ -227,7 +274,7 @@ const Dashboard = () => {
           variant="contained"
           color="primary"
           startIcon={<Plus {...iconProps} />}
-          onClick={() => navigate('/students/add')}
+          onClick={handleAddStudent}
           sx={{ whiteSpace: 'nowrap', px: 3 }}
         >
           Add Student
@@ -239,26 +286,64 @@ const Dashboard = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell width="30%">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <User {...iconProps} />
-                    Name
-                  </Box>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'name'}
+                    direction={orderBy === 'name' ? order : 'asc'}
+                    onClick={() => handleRequestSort('name')}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <User {...iconProps} />
+                      Name
+                    </Box>
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell width="25%">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CalendarDays {...iconProps} />
-                    Date of Birth
-                  </Box>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'dateOfBirth'}
+                    direction={orderBy === 'dateOfBirth' ? order : 'asc'}
+                    onClick={() => handleRequestSort('dateOfBirth')}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarDays {...iconProps} />
+                      Date of Birth
+                    </Box>
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell width="15%">Gender</TableCell>
-                <TableCell width="15%">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <GraduationCap {...iconProps} />
-                    Grade
-                  </Box>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'gender'}
+                    direction={orderBy === 'gender' ? order : 'asc'}
+                    onClick={() => handleRequestSort('gender')}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Users {...iconProps} />
+                      Gender
+                    </Box>
+                  </TableSortLabel>
                 </TableCell>
-                <TableCell width="15%" align="center">
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'grade'}
+                    direction={orderBy === 'grade' ? order : 'asc'}
+                    onClick={() => handleRequestSort('grade')}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GraduationCap {...iconProps} />
+                      Grade
+                    </Box>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'bloodType'}
+                    direction={orderBy === 'bloodType' ? order : 'asc'}
+                    onClick={() => handleRequestSort('bloodType')}
+                  >
+                    Blood Group
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="center">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
                     <SettingsIcon {...iconProps} />
                     Actions
@@ -267,65 +352,67 @@ const Dashboard = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredStudents
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((student) => (
-                  <TableRow 
-                    key={student.id}
-                    hover
-                    selected={selectedStudent?.id === student.id}
-                    onClick={() => handleRowClick(student)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell width="30%">
-                      <Typography variant="body1">
-                        {`${student.firstName} ${student.lastName}`}
-                      </Typography>
-                    </TableCell>
-                    <TableCell width="25%">
-                      {student.dateOfBirth ? format(new Date(student.dateOfBirth), 'MMM d, yyyy') : 'N/A'}
-                    </TableCell>
-                    <TableCell width="15%">{student.gender}</TableCell>
-                    <TableCell width="15%">{student.grade}</TableCell>
-                    <TableCell width="15%" align="center">
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', minWidth: 120 }}>
-                        <IconButton
-                          color="primary"
-                          onClick={(e) => handleViewRecords(e, student)}
-                          title="View Health Records"
-                          size="small"
-                        >
-                          <FileText {...iconProps} />
-                        </IconButton>
-                        <IconButton
-                          color="info"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/students/edit/${student.id}`);
-                          }}
-                          title="Edit Student"
-                          size="small"
-                        >
-                          <Edit {...iconProps} />
-                        </IconButton>
-                        <IconButton
-                          color="error"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(student.id);
-                          }}
-                          title="Delete Student"
-                          size="small"
-                        >
-                          <Trash2 {...iconProps} />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              {filteredStudents.length === 0 && (
+              {(rowsPerPage > 0
+                ? sortedStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                : sortedStudents
+              ).map((student) => (
+                <TableRow 
+                  key={student.id}
+                  hover
+                  selected={selectedStudent?.id === student.id}
+                  onClick={() => handleRowClick(student)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <TableCell>
+                    <Typography variant="body1">
+                      {`${student.firstName} ${student.lastName}`}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {student.dateOfBirth ? format(new Date(student.dateOfBirth), 'MMM d, yyyy') : 'N/A'}
+                  </TableCell>
+                  <TableCell>{student.gender}</TableCell>
+                  <TableCell>{student.grade}</TableCell>
+                  <TableCell>{student.bloodType}</TableCell>
+                  <TableCell align="center">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', minWidth: 120 }}>
+                      <IconButton
+                        color="primary"
+                        onClick={(e) => handleViewRecords(e, student)}
+                        title="View Health Records"
+                        size="small"
+                      >
+                        <FileText {...iconProps} />
+                      </IconButton>
+                      <IconButton
+                        color="info"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditStudent(student.id);
+                        }}
+                        title="Edit Student"
+                        size="small"
+                      >
+                        <Edit {...iconProps} />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(student.id);
+                        }}
+                        title="Delete Student"
+                        size="small"
+                      >
+                        <Trash2 {...iconProps} />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {sortedStudents.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                       <Users {...iconProps} />
                       <Typography color="text.secondary">
@@ -343,7 +430,7 @@ const Dashboard = () => {
         <TablePagination
           rowsPerPageOptions={[3, 5, 10, 25]}
           component="div"
-          count={filteredStudents.length}
+          count={sortedStudents.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

@@ -30,7 +30,13 @@ StudentModel.init(
     },
     gender: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      validate: {
+        isIn: {
+          args: [['Male', 'Female', 'Other']],
+          msg: "Gender must be either 'Male', 'Female', or 'Other'"
+        }
+      }
     },
     grade: {
       type: DataTypes.INTEGER,

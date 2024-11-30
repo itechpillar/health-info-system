@@ -4,31 +4,26 @@ const HealthRecord = require('../models/HealthRecord');
 // Create a new Student
 exports.create = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      dateOfBirth,
-      gender,
-      grade,
-      bloodType
-    } = req.body;
+    const studentData = { ...req.body };
+    
+    // Ensure proper casing for gender
+    if (studentData.gender) {
+      const normalizedGender = studentData.gender.charAt(0).toUpperCase() + studentData.gender.slice(1).toLowerCase();
+      if (!['Male', 'Female', 'Other'].includes(normalizedGender)) {
+        return res.status(400).json({ error: "Gender must be either 'Male', 'Female', or 'Other'" });
+      }
+      studentData.gender = normalizedGender;
+    }
 
     // Validate required fields
-    if (!firstName || !lastName || !dateOfBirth || !gender || !grade) {
+    if (!studentData.firstName || !studentData.lastName || !studentData.dateOfBirth || !studentData.gender || !studentData.grade) {
       return res.status(400).json({
         message: 'Required fields missing',
         required: ['firstName', 'lastName', 'dateOfBirth', 'gender', 'grade']
       });
     }
 
-    const student = await Student.create({
-      firstName,
-      lastName,
-      dateOfBirth,
-      gender,
-      grade,
-      bloodType
-    });
+    const student = await Student.create(studentData);
 
     // Convert to entity before sending response
     const studentEntity = student.toEntity();
@@ -69,28 +64,23 @@ exports.findOne = async (req, res) => {
 // Update a student
 exports.update = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      dateOfBirth,
-      gender,
-      grade,
-      bloodType
-    } = req.body;
+    const updateData = { ...req.body };
+    
+    // Ensure proper casing for gender
+    if (updateData.gender) {
+      const normalizedGender = updateData.gender.charAt(0).toUpperCase() + updateData.gender.slice(1).toLowerCase();
+      if (!['Male', 'Female', 'Other'].includes(normalizedGender)) {
+        return res.status(400).json({ error: "Gender must be either 'Male', 'Female', or 'Other'" });
+      }
+      updateData.gender = normalizedGender;
+    }
 
     const student = await Student.findByPk(req.params.id);
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    await student.update({
-      firstName,
-      lastName,
-      dateOfBirth,
-      gender,
-      grade,
-      bloodType
-    });
+    await student.update(updateData);
 
     res.json(student);
   } catch (error) {

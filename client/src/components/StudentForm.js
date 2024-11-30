@@ -29,6 +29,12 @@ const StudentForm = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const GENDER_OPTIONS = [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Other', label: 'Other' }
+  ];
+
   useEffect(() => {
     if (isEditMode) {
       fetchStudent();
@@ -98,7 +104,7 @@ const StudentForm = () => {
 
       setSuccess(isEditMode ? 'Student updated successfully!' : 'Student created successfully!');
       setTimeout(() => {
-        navigate('/students');
+        navigate('/');
       }, 2000);
     } catch (err) {
       setError(err.message);
@@ -167,9 +173,11 @@ const StudentForm = () => {
                 value={formData.gender}
                 onChange={handleChange}
               >
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                {GENDER_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>

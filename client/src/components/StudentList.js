@@ -81,12 +81,12 @@ const StudentList = () => {
   };
 
   const handleAddStudent = () => {
-    navigate('/students/add');
+    navigate('/student/add');
   };
 
   const handleEditStudent = (e, studentId) => {
     e.stopPropagation();
-    navigate(`/students/edit/${studentId}`);
+    navigate(`/student/edit/${studentId}`);
   };
 
   return (
