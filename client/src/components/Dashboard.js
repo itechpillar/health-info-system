@@ -45,14 +45,15 @@ import {
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { format } from 'date-fns';
 import HealthRecordForm from './HealthRecordForm';
-
-const API_URL = 'http://localhost:5000/api/students';
-const HEALTH_RECORDS_API = 'http://localhost:5000/api/health-records';
+import { API_ENDPOINTS } from '../config';
 
 const iconProps = {
   size: 20,
   strokeWidth: 1.5
 };
+
+const API_URL = API_ENDPOINTS.STUDENTS;
+const HEALTH_RECORDS_API = API_ENDPOINTS.HEALTH_RECORDS;
 
 const BMI_CATEGORIES = {
   severelyUnderweight: {

@@ -77,6 +77,67 @@ The application will be available at `http://localhost:3000`
 - PUT `/api/health-records/:id` - Update a health record
 - DELETE `/api/health-records/:id` - Delete a health record
 
+## Deployment on Render
+
+### Prerequisites
+1. Create a [Render](https://render.com) account
+2. Install [Node.js](https://nodejs.org/) (v14 or higher)
+3. Install [PostgreSQL](https://www.postgresql.org/) (v12 or higher)
+
+### Environment Variables
+Copy `.env.example` to `.env` and update the values:
+```bash
+cp .env.example .env
+```
+
+Required environment variables for production:
+- `NODE_ENV`: Set to 'production'
+- `DATABASE_URL`: PostgreSQL connection string (provided by Render)
+- `JWT_SECRET`: Secret key for JWT authentication
+- `REACT_APP_API_URL`: URL of your deployed API
+
+### Deployment Steps
+
+1. Push your code to GitHub
+2. Connect your GitHub repository to Render
+3. Create a new Web Service for the API:
+   - Build Command: `cd server && npm install`
+   - Start Command: `cd server && npm start`
+   - Add environment variables from `.env`
+
+4. Create a new Static Site for the client:
+   - Build Command: `cd client && npm install && npm run build`
+   - Publish Directory: `client/build`
+   - Add environment variables from `.env`
+
+5. Create a PostgreSQL database on Render
+   - Connect it to your API service
+   - The database URL will be automatically added to your environment variables
+
+### Local Development
+
+1. Install dependencies:
+```bash
+npm run install-all
+```
+
+2. Start development servers:
+```bash
+npm run dev
+```
+
+This will start:
+- Backend server on http://localhost:5000
+- Frontend dev server on http://localhost:3000
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+This will create an optimized production build in the `client/build` directory.
+
 ## Technologies Used
 
 - Frontend:
