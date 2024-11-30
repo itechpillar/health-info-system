@@ -284,12 +284,19 @@ const Dashboard = () => {
   };
 
   const handleEditHealthRecord = (record, e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedHealthRecord(record);
     setIsHealthRecordFormOpen(true);
   };
 
-  const handleAddHealthRecord = (student) => {
+  const handleAddHealthRecord = (student, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedStudent(student);
     setSelectedHealthRecord(null);
     setIsHealthRecordFormOpen(true);
@@ -302,10 +309,18 @@ const Dashboard = () => {
 
   const handleHealthRecordSubmit = async (formData) => {
     try {
+      const recordData = {
+        ...formData,
+        studentId: selectedStudent.id,
+        temperature: formData.temperature ? parseFloat(formData.temperature) : null,
+        height: formData.height ? parseFloat(formData.height) : null,
+        weight: formData.weight ? parseFloat(formData.weight) : null
+      };
+
       if (selectedHealthRecord) {
-        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord.id}`, formData);
+        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord.id}`, recordData);
       } else {
-        await axios.post(HEALTH_RECORDS_API, { ...formData, studentId: selectedStudent.id });
+        await axios.post(HEALTH_RECORDS_API, recordData);
       }
       
       // Refresh health records
@@ -316,7 +331,7 @@ const Dashboard = () => {
       handleHealthRecordFormClose();
     } catch (error) {
       console.error('Error saving health record:', error);
-      throw error; // Let the form handle the error
+      throw error;
     }
   };
 

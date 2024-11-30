@@ -25,28 +25,37 @@ const RECORD_TYPES = [
 const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     recordDate: new Date().toISOString().split('T')[0],
-    recordType: '',
+    recordType: 'Annual Physical',
     height: '',
     weight: '',
     bloodPressure: '',
     temperature: '',
-    nextAppointment: '',
-    medicalNotes: ''
+    allergies: '',
+    medications: '',
+    medicalNotes: '',
+    treatmentPlan: '',
+    nextAppointment: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (initialData) {
+      const recordDate = initialData.recordDate ? new Date(initialData.recordDate).toISOString().split('T')[0] : '';
+      const nextAppointment = initialData.nextAppointment ? new Date(initialData.nextAppointment).toISOString().split('T')[0] : '';
+      
       setFormData({
-        recordDate: initialData.recordDate?.split('T')[0] || '',
-        recordType: initialData.recordType || '',
+        recordDate: recordDate || new Date().toISOString().split('T')[0],
+        recordType: initialData.recordType || 'Annual Physical',
         height: initialData.height || '',
         weight: initialData.weight || '',
         bloodPressure: initialData.bloodPressure || '',
         temperature: initialData.temperature || '',
-        nextAppointment: initialData.nextAppointment?.split('T')[0] || '',
-        medicalNotes: initialData.medicalNotes || ''
+        allergies: initialData.allergies || '',
+        medications: initialData.medications || '',
+        medicalNotes: initialData.medicalNotes || '',
+        treatmentPlan: initialData.treatmentPlan || '',
+        nextAppointment: nextAppointment || ''
       });
     }
   }, [initialData]);
@@ -176,6 +185,25 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
+              label="Allergies"
+              name="allergies"
+              value={formData.allergies}
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Medications"
+              name="medications"
+              value={formData.medications}
+              onChange={handleInputChange}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
               label="Next Appointment"
               type="date"
               name="nextAppointment"
@@ -193,6 +221,17 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
               label="Medical Notes"
               name="medicalNotes"
               value={formData.medicalNotes}
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Treatment Plan"
+              name="treatmentPlan"
+              value={formData.treatmentPlan}
               onChange={handleInputChange}
             />
           </Grid>
