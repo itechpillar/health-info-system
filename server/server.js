@@ -18,26 +18,32 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Serve static files from the React app in production
+if (process.env.NODE_ENV === 'production') {
+  console.log('Running in production mode');
+  app.use(express.static(path.join(__dirname, 'public')));
+}
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/health-records', healthRecordRoutes);
 
-// Swagger API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
-
-// Basic route
-app.get('/', (req, res) => {
+// API welcome route
+app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to Health Records API' });
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files
-  app.use(express.static(path.join(__dirname, 'public')));
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
+// Handle React routing in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   });
 }
