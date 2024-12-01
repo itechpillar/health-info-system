@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 import {
   TextField,
   Button,
@@ -22,7 +24,13 @@ const RECORD_TYPES = [
   'Other'
 ];
 
-const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
+const API_URL = 'http://localhost:5000/api';
+
+const HealthRecordForm = ({ initialData, studentName }) => {
+  const navigate = useNavigate();
+  const { id: recordId } = useParams();
+  const [searchParams] = useSearchParams();
+  const studentId = searchParams.get('studentId') || initialData?.studentId;
   const [formData, setFormData] = useState({
     recordDate: new Date().toISOString().split('T')[0],
     recordType: 'Annual Physical',
@@ -32,20 +40,62 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
     temperature: '',
     allergies: '',
     medications: '',
-    medicalNotes: '',
+    notes: '',
     treatmentPlan: '',
-    nextAppointment: ''
+    nextAppointment: '',
+    bmi: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const fetchRecord = async () => {
+      if (recordId) {
+        try {
+          setLoading(true);
+          // First try to get studentId if not available
+          let currentStudentId = studentId;
+          if (!currentStudentId) {
+            const recordResponse = await axios.get(`${API_URL}/health-records/${recordId}`);
+            currentStudentId = recordResponse.data.studentId;
+          }
+          
+          // Now fetch the full record with student context
+          const response = await axios.get(`${API_URL}/health-records/${recordId}`);
+          const record = response.data;
+          
+          if (record) {
+            setFormData({
+              recordDate: record.recordDate ? new Date(record.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              recordType: record.recordType || 'Annual Physical',
+              height: record.height || '',
+              weight: record.weight || '',
+              bloodPressure: record.bloodPressure || '',
+              temperature: record.temperature || '',
+              allergies: record.allergies || '',
+              medications: record.medications || '',
+              notes: record.notes || '',
+              treatmentPlan: record.treatmentPlan || '',
+              nextAppointment: record.nextAppointment ? new Date(record.nextAppointment).toISOString().split('T')[0] : '',
+              bmi: record.bmi || ''
+            });
+          }
+        } catch (err) {
+          console.error('Error fetching health record:', err);
+          setError('Failed to load health record data');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchRecord();
+  }, [recordId, studentId]);
+
+  useEffect(() => {
     if (initialData) {
-      const recordDate = initialData.recordDate ? new Date(initialData.recordDate).toISOString().split('T')[0] : '';
-      const nextAppointment = initialData.nextAppointment ? new Date(initialData.nextAppointment).toISOString().split('T')[0] : '';
-      
       setFormData({
-        recordDate: recordDate || new Date().toISOString().split('T')[0],
+        recordDate: initialData.recordDate ? new Date(initialData.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         recordType: initialData.recordType || 'Annual Physical',
         height: initialData.height || '',
         weight: initialData.weight || '',
@@ -53,9 +103,10 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
         temperature: initialData.temperature || '',
         allergies: initialData.allergies || '',
         medications: initialData.medications || '',
-        medicalNotes: initialData.medicalNotes || '',
+        notes: initialData.notes || '',
         treatmentPlan: initialData.treatmentPlan || '',
-        nextAppointment: nextAppointment || ''
+        nextAppointment: initialData.nextAppointment ? new Date(initialData.nextAppointment).toISOString().split('T')[0] : '',
+        bmi: initialData.bmi || ''
       });
     }
   }, [initialData]);
@@ -66,11 +117,29 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
     setError(null);
 
     try {
-      await onSubmit(formData);
+      const formDataWithStudent = {
+        ...formData,
+        studentId
+      };
+
+      console.log('Sending form data:', formDataWithStudent); // Debug log
+
+      if (recordId) {
+        // Update existing record
+        const response = await axios.put(`${API_URL}/health-records/${recordId}`, formDataWithStudent);
+        console.log('Update response:', response.data); // Debug log
+      } else {
+        // Create new record
+        const response = await axios.post(`${API_URL}/health-records`, formDataWithStudent);
+        console.log('Create response:', response.data); // Debug log
+      }
+
+      // Navigate back to health records list
+      navigate(`/student/${studentId}/health-records`);
     } catch (err) {
       console.error('Error saving health record:', err);
+      console.error('Error details:', err.response?.data); // Debug log
       setError('Failed to save health record. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -81,6 +150,14 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleCancel = () => {
+    if (!studentId) {
+      navigate('/'); // If no studentId, go to dashboard
+    } else {
+      navigate(`/student/${studentId}/health-records`);
+    }
   };
 
   if (loading && !formData.recordType) {
@@ -254,8 +331,8 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
               multiline
               rows={4}
               label="Medical Notes"
-              name="medicalNotes"
-              value={formData.medicalNotes}
+              name="notes"
+              value={formData.notes}
               onChange={handleInputChange}
             />
           </Grid>
@@ -270,22 +347,32 @@ const HealthRecordForm = ({ initialData, studentName, onSubmit, onCancel }) => {
               onChange={handleInputChange}
             />
           </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="BMI"
+              name="bmi"
+              value={formData.bmi}
+              onChange={handleInputChange}
+            />
+          </Grid>
         </Grid>
 
-        <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
           <Button
             variant="outlined"
-            onClick={onCancel}
-            startIcon={<X size={20} />}
-            disabled={loading}
+            color="inherit"
+            onClick={handleCancel}
+            startIcon={<X />}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="contained"
-            startIcon={<Save size={20} />}
+            color="primary"
             disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <Save />}
           >
             {loading ? 'Saving...' : 'Save Record'}
           </Button>

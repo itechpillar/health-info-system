@@ -4,30 +4,34 @@ import axios from 'axios';
 import {
   Container,
   Paper,
+  Grid,
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Tooltip,
+  useTheme,
+  useMediaQuery,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  Chip,
+  Collapse,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
-  TableSortLabel,
-  Button,
-  IconButton,
-  Typography,
-  Box,
-  TextField,
-  InputAdornment,
-  Collapse,
-  Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Tooltip,
-  Chip
+  TablePagination
 } from '@mui/material';
 import {
   Search,
@@ -40,7 +44,9 @@ import {
   User,
   Phone,
   GraduationCap,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  MoreVertical,
+  UserPlus
 } from 'lucide-react';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { format } from 'date-fns';
@@ -164,25 +170,13 @@ const Dashboard = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(3);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [healthRecords, setHealthRecords] = useState([]);
-  const [loadingRecords, setLoadingRecords] = useState(false);
-  const [recordsError, setRecordsError] = useState(null);
-  const [showRecords, setShowRecords] = useState(false);
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('firstName');
-  const [healthRecordOrder, setHealthRecordOrder] = useState('desc');
-  const [healthRecordOrderBy, setHealthRecordOrderBy] = useState('recordDate');
-  const [isHealthRecordFormOpen, setIsHealthRecordFormOpen] = useState(false);
-  const [selectedHealthRecord, setSelectedHealthRecord] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteHealthRecordDialogOpen, setDeleteHealthRecordDialogOpen] = useState(false);
-  const [recordToDelete, setRecordToDelete] = useState(null);
   const [studentToDelete, setStudentToDelete] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchStudents();
@@ -216,16 +210,6 @@ const Dashboard = () => {
     setStudentToDelete(null);
   };
 
-  const handleDeleteHealthRecordDialogOpen = (record) => {
-    setRecordToDelete(record);
-    setDeleteHealthRecordDialogOpen(true);
-  };
-
-  const handleDeleteHealthRecordDialogClose = () => {
-    setDeleteHealthRecordDialogOpen(false);
-    setRecordToDelete(null);
-  };
-
   const handleDelete = async () => {
     try {
       setError(null);
@@ -234,7 +218,6 @@ const Dashboard = () => {
       // If the deleted student was selected, clear the selection
       if (selectedStudent?.id === studentToDelete.id) {
         setSelectedStudent(null);
-        setHealthRecords([]);
       }
       
       // Refresh the students list
@@ -246,619 +229,197 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteHealthRecord = async () => {
-    try {
-      await axios.delete(`${HEALTH_RECORDS_API}/${recordToDelete.id}`);
-      // Update the health records list without refreshing
-      setHealthRecords(prevRecords => prevRecords.filter(record => record.id !== recordToDelete.id));
-      handleDeleteHealthRecordDialogClose();
-    } catch (err) {
-      console.error('Error deleting health record:', err);
-      setError('Failed to delete health record. Please try again.');
-    }
-  };
-
-  const handleViewHealthRecords = async (student, event) => {
+  const handleViewHealthRecords = (student, event) => {
     // If event exists (icon click), prevent propagation
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
     
-    if (selectedStudent?.id === student.id && showRecords) {
-      // Fade out first, then close
-      setLoadingRecords(true);
-      setTimeout(() => {
-        setShowRecords(false);
-        setSelectedStudent(null);
-        setHealthRecords([]);
-        setLoadingRecords(false);
-      }, 150);
-      return;
-    }
-
-    // If different student, fade out current records first
-    if (showRecords) {
-      setLoadingRecords(true);
-      setTimeout(async () => {
-        setShowRecords(true);
-        setSelectedStudent(student);
-        
-        try {
-          const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
-          setHealthRecords(response.data);
-        } catch (err) {
-          console.error('Error fetching health records:', err);
-          setRecordsError('Failed to fetch health records. Please try again.');
-          setHealthRecords([]);
-        } finally {
-          setLoadingRecords(false);
-        }
-      }, 150);
-    } else {
-      // First time showing records
-      setShowRecords(true);
-      setSelectedStudent(student);
-      setLoadingRecords(true);
-      setRecordsError(null);
-
-      try {
-        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
-        setHealthRecords(response.data);
-      } catch (err) {
-        console.error('Error fetching health records:', err);
-        setRecordsError('Failed to fetch health records. Please try again.');
-        setHealthRecords([]);
-      } finally {
-        setLoadingRecords(false);
-      }
-    }
+    // Navigate to the health records page for this student
+    navigate(`/student/${student.id}/health-records`);
   };
 
-  const handleEditHealthRecord = (record, e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    setSelectedHealthRecord(record);
-    setIsHealthRecordFormOpen(true);
-  };
-
-  const handleAddHealthRecord = (student, e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleActionsClick = (event, student) => {
+    setAnchorEl(event.currentTarget);
     setSelectedStudent(student);
-    setSelectedHealthRecord(null);
-    setIsHealthRecordFormOpen(true);
   };
 
-  const handleHealthRecordFormClose = async (refreshNeeded = false) => {
-    setIsHealthRecordFormOpen(false);
-    setSelectedHealthRecord(null);
-    if (refreshNeeded && selectedStudent) {
-      try {
-        const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
-        setHealthRecords(response.data);
-      } catch (err) {
-        console.error('Error fetching health records:', err);
-        setRecordsError('Failed to fetch health records. Please try again.');
-        setHealthRecords([]);
-      }
+  const handleActionsClose = () => {
+    setAnchorEl(null);
+    setSelectedStudent(null);
+  };
+
+  const handleActionSelect = (action) => {
+    if (!selectedStudent) return;
+
+    switch(action) {
+      case 'view':
+        handleViewHealthRecords(selectedStudent);
+        break;
+      case 'edit':
+        navigate(`/student/edit/${selectedStudent.id}`);
+        break;
+      case 'delete':
+        handleDeleteDialogOpen(selectedStudent);
+        break;
+      default:
+        break;
     }
-  };
-
-  const handleHealthRecordSubmit = async (formData) => {
-    try {
-      setLoading(true);
-      const recordData = {
-        ...formData,
-        studentId: selectedStudent.id,
-        temperature: formData.temperature ? parseFloat(formData.temperature) : null,
-        height: formData.height ? parseFloat(formData.height) : null,
-        weight: formData.weight ? parseFloat(formData.weight) : null
-      };
-
-      if (selectedHealthRecord) {
-        await axios.put(`${HEALTH_RECORDS_API}/${selectedHealthRecord.id}`, recordData);
-      } else {
-        await axios.post(HEALTH_RECORDS_API, recordData);
-      }
-      
-      // Refresh health records
-      const response = await axios.get(`${HEALTH_RECORDS_API}/student/${selectedStudent.id}`);
-      setHealthRecords(response.data);
-      
-      // Close form
-      handleHealthRecordFormClose(true);
-    } catch (error) {
-      console.error('Error saving health record:', error);
-      setError('Failed to save health record. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-    setPage(0);
-  };
-
-  const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
-
-  const getComparator = (order, orderBy) => {
-    return order === 'desc'
-      ? (a, b) => descendingComparator(a, b, orderBy)
-      : (a, b) => -descendingComparator(a, b, orderBy);
-  };
-
-  const descendingComparator = (a, b, orderBy) => {
-    if (orderBy === 'name') {
-      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-      return nameB.localeCompare(nameA);
-    }
-    if (orderBy === 'dateOfBirth') {
-      return new Date(b.dateOfBirth) - new Date(a.dateOfBirth);
-    }
-    if (orderBy === 'grade') {
-      return Number(b.grade) - Number(a.grade);
-    }
-    const valueA = (a[orderBy] || '').toLowerCase();
-    const valueB = (b[orderBy] || '').toLowerCase();
-    return valueB.localeCompare(valueA);
-  };
-
-  const sortedStudents = React.useMemo(() => {
-    const filtered = students.filter((student) => {
-      const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
-      return fullName.includes(searchQuery.toLowerCase());
-    });
-    return filtered.sort(getComparator(order, orderBy));
-  }, [students, searchQuery, order, orderBy]);
-
-  const handleAddStudent = () => {
-    navigate('/student/add');
-  };
-
-  const handleEditStudent = (studentId) => {
-    navigate(`/student/edit/${studentId}`);
-  };
-
-  const handleHealthRecordSort = (property) => {
-    const isAsc = healthRecordOrderBy === property && healthRecordOrder === 'asc';
-    setHealthRecordOrder(isAsc ? 'desc' : 'asc');
-    setHealthRecordOrderBy(property);
-  };
-
-  const sortHealthRecords = (records) => {
-    return [...records].sort((a, b) => {
-      if (healthRecordOrderBy === 'recordDate') {
-        const dateA = new Date(a.recordDate);
-        const dateB = new Date(b.recordDate);
-        return healthRecordOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-      return 0;
-    });
+    handleActionsClose();
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />
       </Box>
     );
   }
 
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mt: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Users {...iconProps} />
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Student Health Records
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 600, color: '#2f3542' }}>
+            Students
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Manage student information and health records
-          </Typography>
+          <Tooltip title="Add Student" arrow placement="left">
+            <Button
+              variant="contained"
+              size="small"
+              color="primary"
+              onClick={() => navigate('/student/add')}
+              sx={{
+                minWidth: '36px',
+                width: '36px',
+                height: '36px',
+                p: 0,
+                borderRadius: '8px',
+                backgroundColor: '#4834d4',
+                '&:hover': {
+                  backgroundColor: '#686de0',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 3px 10px rgba(72, 52, 212, 0.2)',
+                },
+              }}
+            >
+              <UserPlus size={18} />
+            </Button>
+          </Tooltip>
         </Box>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search by student name..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search {...iconProps} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ flex: 1 }}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Plus {...iconProps} />}
-          onClick={handleAddStudent}
-          sx={{ whiteSpace: 'nowrap', px: 3 }}
-        >
-          Add Student
-        </Button>
-      </Box>
-
-      <Paper sx={{ width: '100%', mb: 2, overflow: 'hidden', borderRadius: 2 }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'name'}
-                    direction={orderBy === 'name' ? order : 'asc'}
-                    onClick={() => handleRequestSort('name')}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <User {...iconProps} />
-                      Name
-                    </Box>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'dateOfBirth'}
-                    direction={orderBy === 'dateOfBirth' ? order : 'asc'}
-                    onClick={() => handleRequestSort('dateOfBirth')}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarDays {...iconProps} />
-                      Date of Birth
-                    </Box>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'gender'}
-                    direction={orderBy === 'gender' ? order : 'asc'}
-                    onClick={() => handleRequestSort('gender')}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Users {...iconProps} />
-                      Gender
-                    </Box>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'grade'}
-                    direction={orderBy === 'grade' ? order : 'asc'}
-                    onClick={() => handleRequestSort('grade')}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <GraduationCap {...iconProps} />
-                      Grade
-                    </Box>
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === 'bloodType'}
-                    direction={orderBy === 'bloodType' ? order : 'asc'}
-                    onClick={() => handleRequestSort('bloodType')}
-                  >
-                    Blood Group
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="center">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
-                    <SettingsIcon {...iconProps} />
-                    Actions
-                  </Box>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(rowsPerPage > 0
-                ? sortedStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                : sortedStudents
-              ).map((student) => (
-                <TableRow 
-                  key={student.id}
-                  hover
-                  selected={selectedStudent?.id === student.id}
-                  onClick={() => handleViewHealthRecords(student)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell>
-                    <Typography variant="body1">
-                      {`${student.firstName} ${student.lastName}`}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {student.dateOfBirth ? format(new Date(student.dateOfBirth), 'MMM d, yyyy') : 'N/A'}
-                  </TableCell>
-                  <TableCell>{student.gender}</TableCell>
-                  <TableCell>{student.grade}</TableCell>
-                  <TableCell>{student.bloodType}</TableCell>
-                  <TableCell align="center">
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', minWidth: 120 }}>
-                      <IconButton
-                        color="primary"
-                        onClick={(e) => handleViewHealthRecords(student, e)}
-                        title="View Health Records"
-                        size="small"
-                      >
-                        <FileText {...iconProps} />
-                      </IconButton>
-                      <IconButton
-                        color="info"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditStudent(student.id);
-                        }}
-                        title="Edit Student"
-                        size="small"
-                      >
-                        <Edit {...iconProps} />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        size="small"
-                        onClick={(e) => handleDeleteDialogOpen(student, e)}
-                        title="Delete Student"
-                      >
-                        <Trash2 {...iconProps} />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {sortedStudents.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                      <Users {...iconProps} />
-                      <Typography color="text.secondary">
-                        {searchQuery
-                          ? 'No students found matching your search'
-                          : 'No students found'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[3, 10, 25]}
-          component="div"
-          count={sortedStudents.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
-
-      <Collapse in={showRecords && selectedStudent !== null} timeout={300}>
-        <Paper 
-          sx={{ 
-            mt: 2, 
-            p: 2,
-            opacity: loadingRecords ? 0.7 : 1,
-            transition: 'all 0.3s ease-in-out'
-          }}
-        >
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" component="div">
-              Health Records for {selectedStudent?.firstName} {selectedStudent?.lastName}
-            </Typography>
-            <Button
-              startIcon={<Plus size={20} />}
-              variant="contained"
-              color="primary"
-              onClick={() => handleAddHealthRecord(selectedStudent)}
-              disabled={loadingRecords}
+      <Grid container spacing={3}>
+        {students.map((student) => (
+          <Grid item xs={12} sm={6} md={6} key={student.id}>
+            <Paper
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                borderRadius: 2,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  transition: 'box-shadow 0.3s ease-in-out',
+                },
+              }}
             >
-              Add Record
-            </Button>
-          </Box>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    bgcolor: 'grey.200',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <User {...iconProps} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" component="h2">
+                    {student.firstName} {student.lastName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {student.grade}th Grade
+                  </Typography>
+                </Box>
+              </Box>
 
-          {recordsError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {recordsError}
-            </Alert>
-          )}
-
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <TableSortLabel
-                      active={healthRecordOrderBy === 'recordDate'}
-                      direction={healthRecordOrderBy === 'recordDate' ? healthRecordOrder : 'asc'}
-                      onClick={() => handleHealthRecordSort('recordDate')}
-                    >
-                      Record Date
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>Record Type</TableCell>
-                  <TableCell>Height (cm)</TableCell>
-                  <TableCell>Weight (kg)</TableCell>
-                  <TableCell>Blood Pressure</TableCell>
-                  <TableCell>Temperature (°F)</TableCell>
-                  <TableCell>Next Appointment</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FitnessCenterIcon />
-                      BMI
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loadingRecords ? (
-                  <TableRow>
-                    <TableCell 
-                      colSpan={9} 
-                      align="center" 
-                      sx={{ 
-                        height: '200px',
-                        position: 'relative',
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'rgba(255, 255, 255, 0.8)',
-                          backdropFilter: 'blur(4px)',
-                          zIndex: 1
-                        }
-                      }}
-                    >
-                      <Box 
-                        sx={{ 
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          zIndex: 2,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <CircularProgress size={32} />
-                        <Typography variant="body2" color="text.secondary">
-                          Loading health records...
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ) : healthRecords.length === 0 ? (
-                  <TableRow>
-                    <TableCell 
-                      colSpan={9} 
-                      align="center"
-                      sx={{ 
-                        height: '200px',
-                        position: 'relative'
-                      }}
-                    >
-                      <Box 
-                        sx={{ 
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        <Typography variant="body1" color="text.secondary">
-                          No health records found
-                        </Typography>
-                        <Button
-                          startIcon={<Plus size={16} />}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleAddHealthRecord(selectedStudent)}
-                        >
-                          Add First Record
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sortHealthRecords(healthRecords).map((record) => (
-                    <TableRow 
-                      key={record.id}
-                      sx={{
-                        opacity: loadingRecords ? 0.5 : 1,
-                        transition: 'opacity 0.2s ease-in-out'
-                      }}
-                    >
-                      <TableCell>{format(new Date(record.recordDate), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>{record.recordType}</TableCell>
-                      <TableCell>{record.height || 'N/A'}</TableCell>
-                      <TableCell>{record.weight || 'N/A'}</TableCell>
-                      <TableCell>{record.bloodPressure || 'N/A'}</TableCell>
-                      <TableCell>{record.temperature || 'N/A'}</TableCell>
-                      <TableCell>
-                        {record.nextAppointment
-                          ? format(new Date(record.nextAppointment), 'MMM d, yyyy')
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <BMIDisplay bmi={record.bmi} />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                          <IconButton
-                            color="info"
-                            size="small"
-                            onClick={(e) => handleEditHealthRecord(record, e)}
-                          >
-                            <Edit size={16} />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            size="small"
-                            onClick={() => handleDeleteHealthRecordDialogOpen(record)}
-                          >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[3, 10, 25]}
-            component="div"
-            count={healthRecords.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      </Collapse>
+              <Box 
+                display="flex" 
+                gap={1}
+                sx={{
+                  '& .MuiButton-root': {
+                    minWidth: { xs: '0', sm: 'auto' },
+                  }
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={isMobile ? null : <FileText {...iconProps} />}
+                  onClick={(e) => handleViewHealthRecords(student, e)}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{
+                    whiteSpace: 'nowrap',
+                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                    padding: isMobile ? '4px 8px' : undefined,
+                    flex: { xs: '0 0 auto', sm: 1 },
+                  }}
+                >
+                  {isMobile ? 'Records' : 'View Health Records'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={isMobile ? null : <Edit {...iconProps} />}
+                  onClick={() => navigate(`/student/edit/${student.id}`)}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{
+                    padding: isMobile ? '4px 8px' : undefined,
+                  }}
+                >
+                  {isMobile ? 'Edit' : 'Edit'}
+                </Button>
+                <IconButton
+                  color="error"
+                  size="small"
+                  onClick={(e) => handleDeleteDialogOpen(student, e)}
+                  sx={{
+                    display: { xs: 'none', sm: 'inline-flex' }
+                  }}
+                >
+                  <Trash2 {...iconProps} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleActionsClick(e, student)}
+                  sx={{ 
+                    display: { xs: 'inline-flex', sm: 'none' },
+                    padding: '4px',
+                  }}
+                >
+                  <MoreVertical {...iconProps} />
+                </IconButton>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
 
       <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
         <DialogTitle>Confirm Delete</DialogTitle>
@@ -877,38 +438,55 @@ const Dashboard = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteHealthRecordDialogOpen} onClose={handleDeleteHealthRecordDialogClose}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete the health record from{' '}
-            <strong>{recordToDelete ? format(new Date(recordToDelete.recordDate), 'MMMM d, yyyy') : ''}</strong>{' '}
-            for student{' '}
-            <strong>{selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : ''}</strong>?
-            This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteHealthRecordDialogClose}>Cancel</Button>
-          <Button onClick={handleDeleteHealthRecord} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={isHealthRecordFormOpen} onClose={handleHealthRecordFormClose} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {selectedHealthRecord ? 'Edit Health Record' : 'Add New Health Record'}
-        </DialogTitle>
-        <DialogContent>
-          <HealthRecordForm
-            initialData={selectedHealthRecord}
-            studentName={selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName}` : ''}
-            onSubmit={handleHealthRecordSubmit}
-            onCancel={handleHealthRecordFormClose}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleActionsClose}
+        PaperProps={{
+          elevation: 2,
+          sx: {
+            minWidth: 180,
+            mt: 0.5
+          }
+        }}
+      >
+        <MenuItem 
+          onClick={() => handleActionSelect('view')}
+          sx={{ py: 0.75 }}
+        >
+          <ListItemIcon>
+            <FileText {...iconProps} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="View Records" 
+            primaryTypographyProps={{ variant: 'body2' }}
           />
-        </DialogContent>
-      </Dialog>
+        </MenuItem>
+        <MenuItem 
+          onClick={() => handleActionSelect('edit')}
+          sx={{ py: 0.75 }}
+        >
+          <ListItemIcon>
+            <Edit {...iconProps} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Edit" 
+            primaryTypographyProps={{ variant: 'body2' }}
+          />
+        </MenuItem>
+        <MenuItem 
+          onClick={() => handleActionSelect('delete')}
+          sx={{ py: 0.75 }}
+        >
+          <ListItemIcon>
+            <Trash2 {...iconProps} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Delete" 
+            primaryTypographyProps={{ variant: 'body2' }}
+          />
+        </MenuItem>
+      </Menu>
     </Container>
   );
 };
