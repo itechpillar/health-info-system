@@ -13,9 +13,13 @@ services:
         fromDatabase:
           name: health-records-db
           property: connectionString
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://health-info-system.onrender.com
 
   - type: web
-    name: health-records-client
+    name: health-info-system
     env: static
     buildCommand: cd client && npm install && npm run build
     staticPublishPath: ./client/build
@@ -24,6 +28,12 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: REACT_APP_API_URL
+        value: https://health-records-api.onrender.com
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
 
 databases:
   - name: health-records-db
