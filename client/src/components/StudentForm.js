@@ -11,6 +11,7 @@ import {
   MenuItem,
   CircularProgress
 } from '@mui/material';
+import { API_ENDPOINTS } from '../config';
 
 const StudentForm = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const StudentForm = () => {
 
   const fetchStudent = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/students/${id}`, {
+      const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -85,18 +86,19 @@ const StudentForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = isEditMode ? 
-        `http://localhost:5000/api/students/${id}` : 
-        'http://localhost:5000/api/students';
-
-      const response = await fetch(url, {
-        method: isEditMode ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
-      });
+      const response = await fetch(
+        isEditMode ? 
+        `${API_ENDPOINTS.STUDENTS}/${id}` : 
+        API_ENDPOINTS.STUDENTS,
+        {
+          method: isEditMode ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(formData)
+        }
+      );
 
       if (!response.ok) {
         throw new Error(isEditMode ? 'Failed to update student' : 'Failed to create student');

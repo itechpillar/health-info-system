@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config';
 import HealthRecordsTable from './HealthRecordsTable';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -43,7 +44,7 @@ const StudentList = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/students', {
+      const response = await axios.get(API_ENDPOINTS.STUDENTS, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -58,7 +59,7 @@ const StudentList = () => {
     try {
       setIsLoading(true);
       console.log('Fetching health records for student:', studentId);
-      const response = await axios.get(`http://localhost:5000/api/health-records/student/${studentId}`, {
+      const response = await axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/student/${studentId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },

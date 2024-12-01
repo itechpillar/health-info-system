@@ -27,9 +27,7 @@ import {
   Scale
 } from 'lucide-react';
 import { format, isValid, parseISO } from 'date-fns';
-
-const API_URL = 'http://localhost:5000/api/students';
-const HEALTH_RECORDS_API_URL = 'http://localhost:5000/api/health-records';
+import { API_ENDPOINTS } from '../config';
 
 const iconProps = {
   size: 18,
@@ -84,11 +82,11 @@ const HealthRecordList = () => {
     try {
       setLoading(true);
       const [recordsResponse, studentResponse] = await Promise.all([
-        axios.get(`${HEALTH_RECORDS_API_URL}/student/${studentId}`),
-        axios.get(`${API_URL}/${studentId}`)
+        axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/student/${studentId}`),
+        axios.get(`${API_ENDPOINTS.STUDENTS}/${studentId}`)
       ]);
       
-      console.log('Health Records:', recordsResponse.data); // Debug log
+      console.log('Health Records:', recordsResponse.data);
       setHealthRecords(recordsResponse.data);
       setStudent(studentResponse.data);
       setError(null);
@@ -106,7 +104,7 @@ const HealthRecordList = () => {
 
   const handleDelete = async (recordId) => {
     try {
-      await axios.delete(`${HEALTH_RECORDS_API_URL}/${recordId}`);
+      await axios.delete(`${API_ENDPOINTS.HEALTH_RECORDS}/${recordId}`);
       await fetchData();
     } catch (error) {
       console.error('Error deleting record:', error);
@@ -265,7 +263,7 @@ const HealthRecordList = () => {
                     color="primary"
                     startIcon={isMobile ? null : <Edit {...iconProps} />}
                     onClick={() => {
-                      console.log('Record:', record); // Debug log
+                      console.log('Record:', record); 
                       navigate(`/health-records/edit/${record.id}?studentId=${studentId}`);
                     }}
                     size={isMobile ? "small" : "medium"}

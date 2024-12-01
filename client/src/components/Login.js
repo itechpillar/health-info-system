@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-} from '@mui/material';
 import axios from 'axios';
+import { Box, TextField, Button, Typography, Container, Alert, Paper } from '@mui/material';
+import { API_ENDPOINTS } from '../config';
 
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://health-records-api.onrender.com/api'
-  : 'http://localhost:5000/api';
+const API_URL = API_ENDPOINTS.BASE_URL;
 
 function Login() {
   const navigate = useNavigate();
@@ -33,7 +25,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, formData);
+      const response = await axios.post(`${API_URL}${API_ENDPOINTS.LOGIN}`, formData);
       localStorage.setItem('token', response.data.token);
       navigate('/');
     } catch (error) {

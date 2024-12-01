@@ -12,6 +12,7 @@ import {
   Grid
 } from '@mui/material';
 import { Save, X } from 'lucide-react';
+import { API_ENDPOINTS } from '../config';
 
 const RECORD_TYPES = [
   'Annual Physical',
@@ -23,8 +24,6 @@ const RECORD_TYPES = [
   'Mental Health',
   'Other'
 ];
-
-const API_URL = 'http://localhost:5000/api';
 
 const HealthRecordForm = ({ initialData, studentName }) => {
   const navigate = useNavigate();
@@ -56,12 +55,12 @@ const HealthRecordForm = ({ initialData, studentName }) => {
           // First try to get studentId if not available
           let currentStudentId = studentId;
           if (!currentStudentId) {
-            const recordResponse = await axios.get(`${API_URL}/health-records/${recordId}`);
+            const recordResponse = await axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/${recordId}`);
             currentStudentId = recordResponse.data.studentId;
           }
           
           // Now fetch the full record with student context
-          const response = await axios.get(`${API_URL}/health-records/${recordId}`);
+          const response = await axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/${recordId}`);
           const record = response.data;
           
           if (record) {
@@ -126,11 +125,11 @@ const HealthRecordForm = ({ initialData, studentName }) => {
 
       if (recordId) {
         // Update existing record
-        const response = await axios.put(`${API_URL}/health-records/${recordId}`, formDataWithStudent);
+        const response = await axios.put(`${API_ENDPOINTS.HEALTH_RECORDS}/${recordId}`, formDataWithStudent);
         console.log('Update response:', response.data); // Debug log
       } else {
         // Create new record
-        const response = await axios.post(`${API_URL}/health-records`, formDataWithStudent);
+        const response = await axios.post(`${API_ENDPOINTS.HEALTH_RECORDS}`, formDataWithStudent);
         console.log('Create response:', response.data); // Debug log
       }
 
