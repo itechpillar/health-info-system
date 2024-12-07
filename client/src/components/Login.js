@@ -4,8 +4,6 @@ import axios from 'axios';
 import { Box, TextField, Button, Typography, Container, Alert, Paper } from '@mui/material';
 import { API_ENDPOINTS } from '../config';
 
-const API_URL = API_ENDPOINTS.BASE_URL;
-
 function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -25,11 +23,15 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}${API_ENDPOINTS.LOGIN}`, formData);
-      localStorage.setItem('token', response.data.token);
-      navigate('/');
+      const response = await axios.post(API_ENDPOINTS.LOGIN, formData);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/');
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (error) {
-      setError('Invalid username or password');
+      setError(error.response?.data?.message || 'Invalid username or password');
       console.error('Login error:', error);
     }
   };
@@ -41,16 +43,18 @@ function Login() {
           Login
         </Typography>
         {error && (
-          <Typography color="error" align="center" gutterBottom>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
-          </Typography>
+          </Alert>
         )}
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <TextField
             required
             fullWidth
+            id="username"
             label="Username"
             name="username"
+            autoComplete="username"
             value={formData.username}
             onChange={handleChange}
             margin="normal"
@@ -58,9 +62,11 @@ function Login() {
           <TextField
             required
             fullWidth
+            id="password"
             label="Password"
             name="password"
             type="password"
+            autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
             margin="normal"
@@ -69,7 +75,6 @@ function Login() {
             type="submit"
             fullWidth
             variant="contained"
-            color="primary"
             sx={{ mt: 3, mb: 2 }}
           >
             Sign In

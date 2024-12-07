@@ -9,23 +9,13 @@ import {
   Paper,
   IconButton,
   Button,
-  Dialog,
   Box,
   Typography,
   Tooltip,
-  Chip,
+  Chip
 } from '@mui/material';
-import { Edit, Delete, Add } from '@mui/icons-material';
-import EventIcon from '@mui/icons-material/Event';
-import CategoryIcon from '@mui/icons-material/Category';
-import HeightIcon from '@mui/icons-material/Height';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
-import SettingsIcon from '@mui/icons-material/Settings';
+import { Add, Edit, Delete } from '@mui/icons-material';
 import { format } from 'date-fns';
-import HealthRecordForm from './HealthRecordForm';
 
 const BMI_CATEGORIES = {
   severelyUnderweight: {
