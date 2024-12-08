@@ -174,6 +174,7 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [healthRecordCounts, setHealthRecordCounts] = useState({});
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -188,6 +189,14 @@ const Dashboard = () => {
       setError(null);
       const response = await axios.get(API_URL);
       setStudents(response.data);
+      
+      // Fetch health record counts for all students
+      const counts = {};
+      for (const student of response.data) {
+        const recordsResponse = await axios.get(`${API_URL}/${student.id}/health-records`);
+        counts[student.id] = recordsResponse.data.length;
+      }
+      setHealthRecordCounts(counts);
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to fetch students. Please try again later.');
@@ -374,11 +383,32 @@ const Dashboard = () => {
                   startIcon={isMobile ? null : <FileText {...iconProps} />}
                   onClick={(e) => handleViewHealthRecords(student, e)}
                   size={isMobile ? "small" : "medium"}
+                  endIcon={
+                    <Box
+                      sx={{
+                        bgcolor: healthRecordCounts[student.id] > 0 ? 'primary.dark' : 'action.disabledBackground',
+                        color: healthRecordCounts[student.id] > 0 ? 'primary.contrastText' : 'text.disabled',
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '0.75rem',
+                        ml: 0.5,
+                      }}
+                    >
+                      {healthRecordCounts[student.id] || 0}
+                    </Box>
+                  }
                   sx={{
                     whiteSpace: 'nowrap',
                     fontSize: isMobile ? '0.75rem' : '0.875rem',
                     padding: isMobile ? '4px 8px' : undefined,
                     flex: { xs: '0 0 auto', sm: 1 },
+                    '& .MuiButton-endIcon': {
+                      marginLeft: 1,
+                      marginRight: -0.5,
+                    },
                   }}
                 >
                   {isMobile ? 'Records' : 'View Health Records'}

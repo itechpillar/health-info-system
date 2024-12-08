@@ -9,9 +9,12 @@ import {
   Grid,
   Alert,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  Divider
 } from '@mui/material';
+import { Save, X } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
+import axios from 'axios';
 
 const StudentForm = () => {
   const navigate = useNavigate();
@@ -36,6 +39,31 @@ const StudentForm = () => {
     { value: 'Other', label: 'Other' }
   ];
 
+  const BLOOD_TYPES = [
+    'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
+  ];
+
+  const GRADES = [
+    { value: 0, label: 'Kindergarten' },
+    { value: 1, label: '1st Grade' },
+    { value: 2, label: '2nd Grade' },
+    { value: 3, label: '3rd Grade' },
+    { value: 4, label: '4th Grade' },
+    { value: 5, label: '5th Grade' },
+    { value: 6, label: '6th Grade' },
+    { value: 7, label: '7th Grade' },
+    { value: 8, label: '8th Grade' },
+    { value: 9, label: '9th Grade' },
+    { value: 10, label: '10th Grade' },
+    { value: 11, label: '11th Grade' },
+    { value: 12, label: '12th Grade' }
+  ];
+
+  const getGradeLabel = (gradeValue) => {
+    const grade = GRADES.find(g => g.value === parseInt(gradeValue));
+    return grade ? grade.label : '';
+  };
+
   useEffect(() => {
     if (isEditMode) {
       fetchStudent();
@@ -44,32 +72,59 @@ const StudentForm = () => {
 
   const fetchStudent = async () => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.STUDENTS}/${id}`, {
+      setLoading(true);
+      const response = await axios.get(`${API_ENDPOINTS.STUDENTS}/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const student = response.data;
+      setFormData({
+        ...student,
+        dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '',
+        grade: student.grade.toString() // Convert number to string for the select input
+      });
+    } catch (error) {
+      console.error('Error fetching student:', error);
+      setError('Failed to fetch student data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const url = isEditMode 
+        ? `${API_ENDPOINTS.STUDENTS}/${id}`
+        : API_ENDPOINTS.STUDENTS;
+      
+      const method = isEditMode ? 'put' : 'post';
+      
+      // Convert grade to number before sending to API
+      const payload = {
+        ...formData,
+        grade: parseInt(formData.grade)
+      };
+      
+      await axios[method](url, payload, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch student');
-      }
-
-      const student = await response.json();
-      
-      // Format the date to YYYY-MM-DD for the date input
-      const formattedDate = student.dateOfBirth ? 
-        new Date(student.dateOfBirth).toISOString().split('T')[0] : '';
-
-      setFormData({
-        firstName: student.firstName || '',
-        lastName: student.lastName || '',
-        dateOfBirth: formattedDate,
-        gender: student.gender || '',
-        grade: student.grade || '',
-        bloodType: student.bloodType || ''
-      });
-    } catch (err) {
-      setError('Failed to fetch student details');
+      setSuccess('Student saved successfully');
+      setTimeout(() => {
+        navigate('/students');
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving student:', error);
+      setError('Failed to save student data');
     } finally {
       setLoading(false);
     }
@@ -77,162 +132,153 @@ const StudentForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(
-        isEditMode ? 
-        `${API_ENDPOINTS.STUDENTS}/${id}` : 
-        API_ENDPOINTS.STUDENTS,
-        {
-          method: isEditMode ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(formData)
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(isEditMode ? 'Failed to update student' : 'Failed to create student');
-      }
-
-      setSuccess(isEditMode ? 'Student updated successfully!' : 'Student created successfully!');
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          {isEditMode ? 'Edit Student' : 'Create New Student'}
+    <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: 'auto', mt: 3 }}>
+      <Box mb={3}>
+        <Typography variant="h5" gutterBottom sx={{ color: 'primary.main' }}>
+          {isEditMode ? `Edit Student: ${formData.firstName} ${formData.lastName}` : 'Add New Student'}
         </Typography>
-        
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        {isEditMode && (
+          <Typography variant="subtitle1" color="text.secondary">
+            Grade: {getGradeLabel(formData.grade)} | Date of Birth: {formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : 'Not set'}
+          </Typography>
+        )}
+        <Divider sx={{ my: 2 }} />
+      </Box>
 
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="First Name"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Last Name"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                type="date"
-                label="Date of Birth"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                select
-                label="Gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-              >
-                {GENDER_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                select
-                label="Blood Type"
-                name="bloodType"
-                value={formData.bloodType}
-                onChange={handleChange}
-              >
-                <MenuItem value="A+">A+</MenuItem>
-                <MenuItem value="A-">A-</MenuItem>
-                <MenuItem value="B+">B+</MenuItem>
-                <MenuItem value="B-">B-</MenuItem>
-                <MenuItem value="AB+">AB+</MenuItem>
-                <MenuItem value="AB-">AB-</MenuItem>
-                <MenuItem value="O+">O+</MenuItem>
-                <MenuItem value="O-">O-</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Grade"
-                name="grade"
-                value={formData.grade}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/students')}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                >
-                  {isEditMode ? 'Update Student' : 'Create Student'}
-                </Button>
-              </Box>
-            </Grid>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="First Name"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+            />
           </Grid>
-        </form>
-      </Paper>
-    </Box>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              label="Last Name"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              type="date"
+              label="Date of Birth"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              select
+              label="Gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+            >
+              {GENDER_OPTIONS.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              required
+              select
+              label="Grade"
+              name="grade"
+              value={formData.grade}
+              onChange={handleChange}
+            >
+              {GRADES.map(grade => (
+                <MenuItem key={grade.value} value={grade.value}>
+                  {grade.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              select
+              label="Blood Type"
+              name="bloodType"
+              value={formData.bloodType}
+              onChange={handleChange}
+            >
+              {BLOOD_TYPES.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/students')}
+                startIcon={<X />}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={<Save />}
+                disabled={loading}
+              >
+                {isEditMode ? 'Update Student' : 'Add Student'}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </form>
+    </Paper>
   );
 };
 

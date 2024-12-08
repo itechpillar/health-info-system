@@ -11,10 +11,9 @@ import {
   Button,
   Typography,
   Box,
-  Grow,
   IconButton,
-  Divider,
   Tooltip,
+  Badge,
 } from '@mui/material';
 import { format } from 'date-fns';
 import axios from 'axios';
@@ -36,6 +35,7 @@ const StudentList = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [healthRecords, setHealthRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [healthRecordCounts, setHealthRecordCounts] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +50,18 @@ const StudentList = () => {
         },
       });
       setStudents(response.data);
+      
+      // Fetch health record counts for all students
+      const counts = {};
+      for (const student of response.data) {
+        const recordsResponse = await axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/student/${student.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        counts[student.id] = recordsResponse.data.length;
+      }
+      setHealthRecordCounts(counts);
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -58,14 +70,17 @@ const StudentList = () => {
   const fetchHealthRecords = async (studentId) => {
     try {
       setIsLoading(true);
-      console.log('Fetching health records for student:', studentId);
       const response = await axios.get(`${API_ENDPOINTS.HEALTH_RECORDS}/student/${studentId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      console.log('Health records response:', response.data);
       setHealthRecords(response.data);
+      // Update count for this student
+      setHealthRecordCounts(prev => ({
+        ...prev,
+        [studentId]: response.data.length
+      }));
     } catch (error) {
       console.error('Error fetching health records:', error);
       setHealthRecords([]);
@@ -104,24 +119,12 @@ const StudentList = () => {
           color="primary"
           onClick={handleAddStudent}
           startIcon={<AddCircleOutlineIcon />}
-          sx={{
-            transition: 'all 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'scale(1.05)',
-            },
-          }}
         >
           Add Student
         </Button>
       </Box>
-      
-      <TableContainer 
-        component={Paper} 
-        sx={{ 
-          mb: selectedStudent ? 2 : 0,
-          transition: 'margin-bottom 0.3s ease-in-out'
-        }}
-      >
+
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
@@ -150,6 +153,12 @@ const StudentList = () => {
                   Grade
                 </Box>
               </TableCell>
+              <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HealthAndSafetyIcon color="primary" />
+                  Health Records
+                </Box>
+              </TableCell>
               <TableCell align="center">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
                   <SettingsIcon color="primary" />
@@ -164,93 +173,65 @@ const StudentList = () => {
                 key={student.id}
                 onClick={() => handleRowClick(student)}
                 hover
-                sx={{ 
-                  cursor: 'pointer',
-                  backgroundColor: selectedStudent?.id === student.id ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
-                  '&:hover': {
-                    backgroundColor: selectedStudent?.id === student.id 
-                      ? 'rgba(25, 118, 210, 0.12)' 
-                      : 'rgba(0, 0, 0, 0.04)',
-                  },
-                  transition: 'background-color 0.2s ease-in-out',
-                }}
+                sx={{ cursor: 'pointer' }}
               >
                 <TableCell align="center">
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'transform 0.2s ease-in-out',
-                    transform: selectedStudent?.id === student.id ? 'scale(1.1)' : 'scale(1)',
-                  }}>
-                    <IconButton
-                      size="small"
-                      sx={{ 
-                        color: selectedStudent?.id === student.id ? 'primary.main' : 'action.disabled',
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRowClick(student);
-                      }}
-                    >
-                      {selectedStudent?.id === student.id ? (
-                        <KeyboardArrowUpIcon />
-                      ) : (
-                        <KeyboardArrowDownIcon />
-                      )}
-                    </IconButton>
-                  </Box>
+                  <IconButton size="small">
+                    {selectedStudent?.id === student.id ? (
+                      <KeyboardArrowUpIcon />
+                    ) : (
+                      <KeyboardArrowDownIcon />
+                    )}
+                  </IconButton>
                 </TableCell>
+                <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
+                <TableCell>{format(new Date(student.dateOfBirth), 'MM/dd/yyyy')}</TableCell>
+                <TableCell>{student.gender}</TableCell>
+                <TableCell>{student.grade}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {selectedStudent?.id === student.id && (
+                    <Badge
+                      badgeContent={healthRecordCounts[student.id] || 0}
+                      color={healthRecordCounts[student.id] > 0 ? "primary" : "default"}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.8rem',
+                          height: '22px',
+                          minWidth: '22px',
+                          borderRadius: '11px',
+                        }
+                      }}
+                    >
                       <HealthAndSafetyIcon 
-                        color="primary" 
-                        sx={{ 
-                          fontSize: 20,
-                          animation: 'pulse 1.5s infinite',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 0.6 },
-                            '50%': { opacity: 1 },
-                            '100%': { opacity: 0.6 },
-                          },
-                        }} 
+                        color={healthRecordCounts[student.id] > 0 ? "primary" : "disabled"}
                       />
-                    )}
-                    {`${student.firstName} ${student.lastName}`}
+                    </Badge>
+                    <Typography variant="body2" color="textSecondary">
+                      {healthRecordCounts[student.id] > 0 
+                        ? `${healthRecordCounts[student.id]} Records` 
+                        : 'No Records'}
+                    </Typography>
                   </Box>
                 </TableCell>
-                <TableCell>
-                  {format(new Date(student.dateOfBirth), 'MM/dd/yyyy')}
-                </TableCell>
-                <TableCell>
-                  {student.gender}
-                </TableCell>
-                <TableCell>
-                  {student.grade}
-                </TableCell>
                 <TableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Tooltip title="Edit Student" arrow>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                    <Tooltip title="Edit Student">
                       <IconButton
                         size="small"
                         onClick={(e) => handleEditStudent(e, student.id)}
-                        sx={{
-                          border: '2px solid',
-                          borderColor: 'primary.main',
-                          color: 'primary.main',
-                          width: '34px',
-                          height: '34px',
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                            color: 'white',
-                            transform: 'scale(1.1)',
-                          },
-                          transition: 'all 0.2s ease-in-out',
+                      >
+                        <CreateRoundedIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Add Health Record">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/health-record/add?studentId=${student.id}`);
                         }}
                       >
-                        <CreateRoundedIcon sx={{ fontSize: 18 }} />
+                        <HealthAndSafetyIcon />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -261,12 +242,18 @@ const StudentList = () => {
         </Table>
       </TableContainer>
 
-      {selectedStudent && (
+      {selectedStudent && healthRecords.length > 0 && (
         <Box sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom color="primary">
+            Health Records for {selectedStudent.firstName} {selectedStudent.lastName}
+          </Typography>
           <HealthRecordsTable
-            student={selectedStudent}
-            healthRecords={healthRecords}
+            records={healthRecords}
+            studentId={selectedStudent.id}
             isLoading={isLoading}
+            onRecordAdded={() => {
+              fetchHealthRecords(selectedStudent.id);
+            }}
           />
         </Box>
       )}
