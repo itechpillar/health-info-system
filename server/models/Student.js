@@ -45,6 +45,10 @@ StudentModel.init(
     bloodType: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    fatherName: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   },
   {

@@ -9,6 +9,8 @@ import HealthRecordList from './components/HealthRecordList';
 import HealthRecordForm from './components/HealthRecordForm';
 import StudentList from './components/StudentList';
 import StudentForm from './components/StudentForm';
+import GradeStudents from './components/GradeStudents';
+import StudentDetails from './components/StudentDetails';
 
 const theme = createTheme({
   palette: {
@@ -58,7 +60,7 @@ const App = () => {
             }
           />
           <Route
-            path="/student/add"
+            path="/students/add"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -68,7 +70,7 @@ const App = () => {
             }
           />
           <Route
-            path="/student/edit/:id"
+            path="/students/edit/:id"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -78,7 +80,7 @@ const App = () => {
             }
           />
           <Route
-            path="/student/:id/health-records"
+            path="/students/:id/health-records"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -88,7 +90,7 @@ const App = () => {
             }
           />
           <Route
-            path="/health-records/new"
+            path="/students/:studentId/health-record/add"
             element={
               <PrivateRoute>
                 <MainLayout>
@@ -98,11 +100,31 @@ const App = () => {
             }
           />
           <Route
-            path="/health-records/edit/:id"
+            path="/students/:studentId/health-record/edit/:id"
             element={
               <PrivateRoute>
                 <MainLayout>
                   <HealthRecordForm />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/grade/:grade"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <GradeStudents />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/students/:id"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <StudentDetails />
                 </MainLayout>
               </PrivateRoute>
             }

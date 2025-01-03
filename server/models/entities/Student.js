@@ -9,6 +9,7 @@ class Student {
     gender,
     grade,
     bloodType,
+    fatherName,
     createdAt,
     updatedAt,
     healthRecords = []
@@ -20,6 +21,7 @@ class Student {
     this.gender = gender;
     this.grade = grade;
     this.bloodType = bloodType;
+    this.fatherName = fatherName;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.healthRecords = healthRecords;
@@ -41,6 +43,7 @@ class Student {
       gender: this.gender,
       grade: this.grade,
       bloodType: this.bloodType,
+      fatherName: this.fatherName,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       healthRecords: this.healthRecords.map(record => record.toJSON())
