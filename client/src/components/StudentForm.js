@@ -28,7 +28,10 @@ const StudentForm = () => {
     dateOfBirth: '',
     gender: '',
     grade: '',
-    bloodType: ''
+    bloodType: '',
+    address: '',
+    contactNumber: '',
+    fatherName: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -187,10 +190,19 @@ const StudentForm = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              required
               label="Last Name"
               name="lastName"
               value={formData.lastName}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Father's Name"
+              name="fatherName"
+              value={formData.fatherName}
               onChange={handleChange}
             />
           </Grid>
@@ -255,6 +267,28 @@ const StudentForm = () => {
                 </MenuItem>
               ))}
             </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              required
+              label="Contact Number"
+              name="contactNumber"
+              value={formData.contactNumber}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              required
+              label="Address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              multiline
+              rows={3}
+            />
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>

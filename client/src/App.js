@@ -11,6 +11,7 @@ import StudentList from './components/StudentList';
 import StudentForm from './components/StudentForm';
 import GradeStudents from './components/GradeStudents';
 import StudentDetails from './components/StudentDetails';
+import AddStudent from './components/AddStudent';
 
 const theme = createTheme({
   palette: {
@@ -115,6 +116,16 @@ const App = () => {
               <PrivateRoute>
                 <MainLayout>
                   <GradeStudents />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/grade/:grade/add-student"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <AddStudent />
                 </MainLayout>
               </PrivateRoute>
             }
