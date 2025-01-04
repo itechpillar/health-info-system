@@ -36,8 +36,12 @@ const GradeStudents = () => {
       setLoading(true);
       setError(null);
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/students`);
-      const filteredStudents = response.data.filter(student => student.grade === parseInt(grade));
-      setStudents(filteredStudents);
+      if (grade === 'all') {
+        setStudents(response.data);
+      } else {
+        const filteredStudents = response.data.filter(student => student.grade === parseInt(grade));
+        setStudents(filteredStudents);
+      }
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to fetch students. Please try again later.');
@@ -105,7 +109,7 @@ const GradeStudents = () => {
             <ArrowLeft />
           </IconButton>
           <Typography variant="h4" component="h1">
-            {grade}{getOrdinalSuffix(parseInt(grade))} Grade Students
+            {grade === 'all' ? 'All Students' : `${grade}${getOrdinalSuffix(parseInt(grade))} Grade Students`}
           </Typography>
         </Box>
 
@@ -147,6 +151,7 @@ const GradeStudents = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Student Name</TableCell>
+                  {grade === 'all' && <TableCell>Grade</TableCell>}
                   <TableCell>Father's Name</TableCell>
                   <TableCell>Address</TableCell>
                   <TableCell>Contact Number</TableCell>
@@ -156,7 +161,8 @@ const GradeStudents = () => {
               <TableBody>
                 {filteredStudents.map((student) => (
                   <TableRow key={student.id}>
-                    <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
+                    <TableCell>{`${student.firstName}, ${student.lastName}`}</TableCell>
+                    {grade === 'all' && <TableCell>{`${student.grade}`}</TableCell>}
                     <TableCell>{student.fatherName || '-'}</TableCell>
                     <TableCell>{student.address || '-'}</TableCell>
                     <TableCell>{student.contactNumber || '-'}</TableCell>
@@ -174,7 +180,7 @@ const GradeStudents = () => {
                 ))}
                 {filteredStudents.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={grade === 'all' ? 6 : 5} align="center">
                       No students found
                     </TableCell>
                   </TableRow>

@@ -176,11 +176,17 @@ const Dashboard = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [healthRecordCounts, setHealthRecordCounts] = useState({});
   const [gradeStats, setGradeStats] = useState({
+    'All Grades': 0,
     '1st Grade': 0,
     '2nd Grade': 0,
     '3rd Grade': 0,
     '4th Grade': 0,
-    '5th Grade': 0
+    '5th Grade': 0,
+    '6th Grade': 0,
+    '7th Grade': 0,
+    '8th Grade': 0,
+    '9th Grade': 0,
+    '10th Grade': 0    
   });
   const navigate = useNavigate();
   const theme = useTheme();
@@ -207,17 +213,24 @@ const Dashboard = () => {
 
       // Calculate grade statistics
       const stats = {
+        'All Grades': 0,
         '1st Grade': 0,
         '2nd Grade': 0,
         '3rd Grade': 0,
         '4th Grade': 0,
-        '5th Grade': 0
+        '5th Grade': 0,
+        '6th Grade': 0,
+        '7th Grade': 0,
+        '8th Grade': 0,
+        '9th Grade': 0,
+        '10th Grade': 0  
       };
       
       response.data.forEach(student => {
         const gradeKey = `${student.grade}${getOrdinalSuffix(student.grade)} Grade`;
         if (stats.hasOwnProperty(gradeKey)) {
           stats[gradeKey]++;
+          stats['All Grades']++; // Increment the total count for all grades
         }
       });
       
@@ -396,7 +409,14 @@ const Dashboard = () => {
                         boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                       }
                     }}
-                    onClick={() => navigate(`/grade/${gradeNumber}`)}
+                    onClick={() => {
+                      if (grade === 'All Grades') {
+                        navigate('/grade/all');
+                      } else {
+                        const gradeNumber = parseInt(grade.split(' ')[0]);
+                        navigate(`/grade/${gradeNumber}`);
+                      }
+                    }}
                   >
                     <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
                       {grade}

@@ -5,7 +5,7 @@ const pool = new Pool({
   user: 'postgres',
   host: '127.0.0.1',
   database: 'postgres', // Connect to default postgres database
-  password: 'postgres',
+  password: 'Post0gres',
   port: 5432,
 });
 

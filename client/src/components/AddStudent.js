@@ -7,6 +7,7 @@ import {
   TextField,
   Button,
   Paper,
+  MenuItem,
   IconButton,
   Alert,
   CircularProgress
@@ -28,6 +29,12 @@ const AddStudent = () => {
     contactNumber: '',
     address: ''
   });
+
+  const GENDER_OPTIONS = [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Other', label: 'Other' }
+  ];
 
   const handleChange = (e) => {
     setFormData({
@@ -142,12 +149,19 @@ const AddStudent = () => {
               />
               <TextField
                 required
+                select
                 label="Gender"
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
                 fullWidth
-              />
+              >
+                {GENDER_OPTIONS.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+              </TextField>
               <TextField
                 label="Father's Name"
                 name="fatherName"
