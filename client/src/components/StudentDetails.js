@@ -114,7 +114,7 @@ const StudentDetails = () => {
       {/* Main Content */}
       <Box sx={{ marginLeft: '250px' }}>
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ color: 'text.primary' }}>
+          <IconButton onClick={() => navigate('/')} sx={{ color: 'text.primary' }}>
             <ArrowLeft />
           </IconButton>
           <Typography variant="h4">Back</Typography>

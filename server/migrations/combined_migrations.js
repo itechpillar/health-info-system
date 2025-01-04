@@ -34,6 +34,22 @@ module.exports = {
         type: DataTypes.STRING,
         allowNull: true
       },
+      fatherName: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      motherName: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      contactNumber: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      address: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false

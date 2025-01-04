@@ -294,7 +294,7 @@ const StudentForm = () => {
             <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
               <Button
                 variant="outlined"
-                onClick={() => navigate('/students')}
+                onClick={() => navigate(isEditMode ? `/students/${id}` : '/students')}
                 startIcon={<X />}
               >
                 Cancel
