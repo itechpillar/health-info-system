@@ -339,20 +339,35 @@ const Dashboard = () => {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Left Sidebar */}
+    <Box sx={{ flexGrow: 1 }}>
+      {/* Left Sidebar - Now responsive */}
       <Box sx={{
-        width: 250,
-        position: 'fixed',
+        width: { xs: '100%', md: 250 },
+        position: { xs: 'static', md: 'fixed' },
         left: 0,
         top: 0,
         bottom: 0,
         bgcolor: '#1e2632',
         color: 'white',
-        p: 2
+        p: 2,
+        display: { xs: 'flex', md: 'block' },
+        flexDirection: { xs: 'row', md: 'column' },
+        justifyContent: { xs: 'space-between', md: 'flex-start' },
+        alignItems: { xs: 'center', md: 'stretch' },
+        zIndex: 1100
       }}>
-        <Typography variant="h5" sx={{ mb: 4 }}>School Dashboard</Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Typography variant="h5" sx={{ 
+          mb: { xs: 0, md: 4 },
+          fontSize: { xs: '1.2rem', md: '1.5rem' }
+        }}>
+          School Dashboard
+        </Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'row', md: 'column' }, 
+          gap: 1,
+          flexGrow: { xs: 0, md: 1 }
+        }}>
           <Button
             component={Link}
             to="/students"
@@ -361,10 +376,12 @@ const Dashboard = () => {
               color: 'white',
               justifyContent: 'flex-start',
               bgcolor: 'rgba(255,255,255,0.08)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+              minWidth: { xs: 'auto', md: '100%' },
+              px: { xs: 2, md: 3 }
             }}
           >
-            Students
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Students</Box>
           </Button>
           <Button
             component={Link}
@@ -373,64 +390,83 @@ const Dashboard = () => {
             sx={{
               color: 'white',
               justifyContent: 'flex-start',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+              minWidth: { xs: 'auto', md: '100%' },
+              px: { xs: 2, md: 3 }
             }}
           >
-            Teachers
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Teachers</Box>
           </Button>
         </Box>
       </Box>
 
-      {/* Main Content */}
-      <Box sx={{ marginLeft: '250px' }}>
-        <Typography variant="h4" sx={{ mb: 4 }}>Student Grade Statistics</Typography>
+      {/* Main Content - Now responsive */}
+      <Box sx={{ 
+        marginLeft: { xs: 0, md: '250px' },
+        p: { xs: 2, sm: 3 },
+        mt: { xs: 2, md: 0 }
+      }}>
+        <Typography variant="h4" sx={{ 
+          mb: 4,
+          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
+        }}>
+          Student Grade Statistics
+        </Typography>
         
         {loading ? (
-          <CircularProgress />
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <CircularProgress />
+          </Box>
         ) : error ? (
-          <Alert severity="error">{error}</Alert>
+          <Alert severity="error" sx={{ mx: { xs: 2, sm: 0 } }}>{error}</Alert>
         ) : (
-          <Grid container spacing={3}>
-            {Object.entries(gradeStats).map(([grade, count]) => {
-              const gradeNumber = parseInt(grade);
-              return (
-                <Grid item xs={12} sm={6} md={4} key={grade}>
-                  <Paper
-                    sx={{
-                      p: 3,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 2,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      transition: 'transform 0.2s',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                      }
-                    }}
-                    onClick={() => {
-                      if (grade === 'All Grades') {
-                        navigate('/grade/all');
-                      } else {
-                        const gradeNumber = parseInt(grade.split(' ')[0]);
-                        navigate(`/grade/${gradeNumber}`);
-                      }
-                    }}
-                  >
-                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-                      {grade}
-                    </Typography>
-                    <Typography variant="h3" sx={{ mb: 1, fontWeight: 'bold' }}>
-                      {count}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      Students
-                    </Typography>
-                  </Paper>
-                </Grid>
-              );
-            })}
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
+            {Object.entries(gradeStats).map(([grade, count]) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={grade}>
+                <Paper
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 2,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.2s',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                    },
+                    height: '100%'
+                  }}
+                  onClick={() => {
+                    if (grade === 'All Grades') {
+                      navigate('/grade/all');
+                    } else {
+                      const gradeNumber = parseInt(grade.split(' ')[0]);
+                      navigate(`/grade/${gradeNumber}`);
+                    }
+                  }}
+                >
+                  <Typography variant="h5" sx={{ 
+                    mb: 2, 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1.2rem', sm: '1.5rem' }
+                  }}>
+                    {grade}
+                  </Typography>
+                  <Typography variant="h3" sx={{ 
+                    mb: 1, 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '2rem', sm: '2.5rem' }
+                  }}>
+                    {count}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Students
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
           </Grid>
         )}
       </Box>

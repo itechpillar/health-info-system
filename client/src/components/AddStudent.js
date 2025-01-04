@@ -65,49 +65,55 @@ const AddStudent = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Left Sidebar */}
-      <Box sx={{
-        width: 250,
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        bgcolor: '#1e2632',
-        color: 'white',
-        p: 2
-      }}>
-        <Typography variant="h5" sx={{ mb: 4 }}>School Dashboard</Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Button
-            sx={{
-              color: 'white',
-              justifyContent: 'flex-start',
-              bgcolor: 'rgba(255,255,255,0.08)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
-            }}
-          >
-            Students
-          </Button>
-          <Button
-            sx={{
-              color: 'white',
-              justifyContent: 'flex-start',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
-            }}
-          >
-            Teachers
-          </Button>
-        </Box>
+    <Box sx={{ flexGrow: 1 }}>
+      {/* Header - Now fixed at top */}
+      <Box
+        sx={{
+          bgcolor: '#1e2632',
+          color: 'white',
+          p: 2,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+        }}
+      >
+        <Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
+          School Dashboard
+        </Typography>
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ marginLeft: '250px', width: 'calc(100% - 250px)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-          <IconButton onClick={() => navigate(`/grade/${grade}`)} sx={{ mr: 2 }}>
+      <Box
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mt: '64px', // Height of the header
+          maxWidth: '1200px',
+          mx: 'auto'
+        }}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: { xs: 2, sm: 4 },
+          flexWrap: 'wrap',
+          gap: 1
+        }}>
+          <IconButton 
+            onClick={() => navigate(`/grade/${grade}`)}
+            sx={{ mr: { xs: 1, sm: 2 } }}
+          >
             <ArrowLeft />
           </IconButton>
-          <Typography variant="h4" component="h1">
+          <Typography 
+            variant="h4" 
+            component="h1"
+            sx={{ 
+              fontSize: { xs: '1.5rem', sm: '2rem' },
+              flex: 1
+            }}
+          >
             Add New Student to Grade {grade}
           </Typography>
         </Box>
@@ -118,9 +124,16 @@ const AddStudent = () => {
           </Alert>
         )}
 
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
           <form onSubmit={handleSubmit}>
-            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            <Box sx={{ 
+              display: 'grid', 
+              gap: { xs: 2, sm: 3 },
+              gridTemplateColumns: { 
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)' 
+              }
+            }}>
               <TextField
                 required
                 label="First Name"
@@ -128,6 +141,7 @@ const AddStudent = () => {
                 value={formData.firstName}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               />
               <TextField
                 required
@@ -136,6 +150,7 @@ const AddStudent = () => {
                 value={formData.lastName}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               />
               <TextField
                 required
@@ -145,6 +160,7 @@ const AddStudent = () => {
                 value={formData.dateOfBirth}
                 onChange={handleChange}
                 fullWidth
+                size="small"
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
@@ -155,12 +171,13 @@ const AddStudent = () => {
                 value={formData.gender}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               >
                 {GENDER_OPTIONS.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
               </TextField>
               <TextField
                 label="Father's Name"
@@ -168,6 +185,7 @@ const AddStudent = () => {
                 value={formData.fatherName}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               />
               <TextField
                 label="Mother's Name"
@@ -175,6 +193,7 @@ const AddStudent = () => {
                 value={formData.motherName}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               />
               <TextField
                 required
@@ -183,6 +202,7 @@ const AddStudent = () => {
                 value={formData.contactNumber}
                 onChange={handleChange}
                 fullWidth
+                size="small"
               />
               <TextField
                 required
@@ -193,19 +213,31 @@ const AddStudent = () => {
                 fullWidth
                 multiline
                 rows={2}
+                size="small"
               />
             </Box>
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ 
+              mt: { xs: 2, sm: 3 }, 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1, sm: 2 },
+              justifyContent: 'flex-end' 
+            }}>
               <Button
                 type="button"
                 onClick={() => navigate(`/grade/${grade}`)}
-                sx={{ mr: 2 }}
+                variant="outlined"
+                color="primary"
+                fullWidth={{ xs: true, sm: false }}
+                disabled={loading}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 variant="contained"
+                color="primary"
+                fullWidth={{ xs: true, sm: false }}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} /> : 'Add Student'}

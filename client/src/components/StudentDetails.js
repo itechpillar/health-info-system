@@ -16,7 +16,12 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  Card,
+  CardContent,
+  CardActions,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { ArrowLeft, Edit, Plus } from 'lucide-react';
 
@@ -27,6 +32,8 @@ const StudentDetails = () => {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchData();
@@ -70,189 +77,279 @@ const StudentDetails = () => {
     });
   };
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">{error}</Alert>;
-  if (!student) return <Alert severity="info">Student not found</Alert>;
+  const HealthRecordCard = ({ record }) => (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="subtitle1" gutterBottom>
+          Date: {formatDate(record.date)}
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary">
+              Height: {record.height} cm
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary">
+              Weight: {record.weight} kg
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary">
+              BMI: {record.bmi?.toFixed(1) || '-'}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary">
+              Blood Pressure: {record.bloodPressure || '-'}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2" color="text.secondary">
+              Temperature: {record.temperature}°C
+            </Typography>
+          </Grid>
+          {record.notes && (
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                Notes: {record.notes}
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
+      </CardContent>
+      <CardActions>
+        <Button
+          size="small"
+          color="primary"
+          onClick={() => navigate(`/students/${student.id}/health-record/edit/${record.id}`)}
+        >
+          Edit Record
+        </Button>
+      </CardActions>
+    </Card>
+  );
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <CircularProgress />
+    </Box>
+  );
+  if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+  if (!student) return <Alert severity="info" sx={{ m: 2 }}>Student not found</Alert>;
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Left Sidebar */}
-      <Box sx={{
-        width: 250,
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        bgcolor: '#1e2632',
-        color: 'white',
-        p: 2
-      }}>
-        <Typography variant="h5" sx={{ mb: 4 }}>School Dashboard</Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Button
-            sx={{
-              color: 'white',
-              justifyContent: 'flex-start',
-              bgcolor: 'rgba(255,255,255,0.08)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
-            }}
-          >
-            Students
-          </Button>
-          <Button
-            sx={{
-              color: 'white',
-              justifyContent: 'flex-start',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }
-            }}
-          >
-            Teachers
-          </Button>
-        </Box>
+    <Box sx={{ flexGrow: 1 }}>
+      {/* Header - Now fixed at top */}
+      <Box
+        sx={{
+          bgcolor: '#1e2632',
+          color: 'white',
+          p: 2,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+        }}
+      >
+        <Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
+          School Dashboard
+        </Typography>
       </Box>
 
       {/* Main Content */}
-      <Box sx={{ marginLeft: '250px' }}>
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate('/')} sx={{ color: 'text.primary' }}>
+      <Box
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mt: '64px', // Height of the header
+          maxWidth: '1200px',
+          mx: 'auto'
+        }}
+      >
+        {/* Back button and title */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: { xs: 2, sm: 4 },
+          gap: 1
+        }}>
+          <IconButton 
+            onClick={() => navigate('/')} 
+            sx={{ mr: 1 }}
+          >
             <ArrowLeft />
           </IconButton>
-          <Typography variant="h4">Back</Typography>
+          <Typography 
+            variant="h4" 
+            component="h1"
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+          >
+            Student Details
+          </Typography>
         </Box>
 
-        <Paper sx={{ p: 4, borderRadius: 2, mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4">Student Details</Typography>
+        {/* Student Information Card */}
+        <Paper sx={{ 
+          p: { xs: 2, sm: 3 }, 
+          mb: { xs: 2, sm: 3 } 
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 2,
+            mb: 3
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            >
+              {`${student.firstName} ${student.lastName}`}
+            </Typography>
             <Button
               variant="contained"
               startIcon={<Edit />}
               onClick={() => navigate(`/students/edit/${student.id}`)}
+              fullWidth={isMobile}
             >
               Edit Details
             </Button>
           </Box>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 2 }} />
 
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
-                  Student Name
-                </Typography>
-                <Typography variant="h6">
-                  {`${student.firstName} ${student.lastName}`}
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
-                  Father's Name
-                </Typography>
-                <Typography variant="h6">
-                  {student.fatherName || '-'}
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
                   Grade
                 </Typography>
-                <Typography variant="h6">
+                <Typography variant="body1">
                   {`${student.grade}${getOrdinalSuffix(student.grade)} Grade`}
                 </Typography>
               </Box>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
-                  Address
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Father's Name
                 </Typography>
-                <Typography variant="h6">
-                  {student.address || '-'}
+                <Typography variant="body1">
+                  {student.fatherName || '-'}
                 </Typography>
               </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Blood Type
+                </Typography>
+                <Typography variant="body1">
+                  {student.bloodType || '-'}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
                   Contact Number
                 </Typography>
-                <Typography variant="h6">
+                <Typography variant="body1">
                   {student.contactNumber || '-'}
                 </Typography>
               </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" color="text.secondary">
-                  Blood Type
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Address
                 </Typography>
-                <Typography variant="h6">
-                  {student.bloodType || '-'}
+                <Typography variant="body1">
+                  {student.address || '-'}
                 </Typography>
               </Box>
             </Grid>
           </Grid>
         </Paper>
 
-        <Paper sx={{ p: 4, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4">Health Records</Typography>
+        {/* Health Records Section */}
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 2,
+            mb: 3
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            >
+              Health Records
+            </Typography>
             <Button
               variant="contained"
               startIcon={<Plus />}
               onClick={() => navigate(`/students/${student.id}/health-record/add`)}
+              fullWidth={isMobile}
             >
               Add Health Record
             </Button>
           </Box>
 
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Height (cm)</TableCell>
-                  <TableCell>Weight (kg)</TableCell>
-                  <TableCell>BMI</TableCell>
-                  <TableCell>Blood Pressure</TableCell>
-                  <TableCell>Temperature (°C)</TableCell>
-                  <TableCell>Notes</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {healthRecords.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center">
-                      No health records found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  healthRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>{formatDate(record.date)}</TableCell>
-                      <TableCell>{record.height}</TableCell>
-                      <TableCell>{record.weight}</TableCell>
-                      <TableCell>{record.bmi?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{record.bloodPressure || '-'}</TableCell>
-                      <TableCell>{record.temperature}</TableCell>
-                      <TableCell>{record.notes || '-'}</TableCell>
-                      <TableCell align="right">
-                        <Button
-                          variant="text"
-                          color="primary"
-                          onClick={() => navigate(`/students/${student.id}/health-record/edit/${record.id}`)}
-                        >
-                          Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {healthRecords.length === 0 ? (
+            <Typography align="center" color="text.secondary" sx={{ py: 4 }}>
+              No health records found
+            </Typography>
+          ) : (
+            <>
+              {isMobile ? (
+                // Mobile view - Cards
+                <Box>
+                  {healthRecords.map((record) => (
+                    <HealthRecordCard key={record.id} record={record} />
+                  ))}
+                </Box>
+              ) : (
+                // Desktop view - Table
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Height (cm)</TableCell>
+                        <TableCell>Weight (kg)</TableCell>
+                        <TableCell>BMI</TableCell>
+                        <TableCell>Blood Pressure</TableCell>
+                        <TableCell>Temperature (°C)</TableCell>
+                        <TableCell>Notes</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {healthRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{formatDate(record.date)}</TableCell>
+                          <TableCell>{record.height}</TableCell>
+                          <TableCell>{record.weight}</TableCell>
+                          <TableCell>{record.bmi?.toFixed(1) || '-'}</TableCell>
+                          <TableCell>{record.bloodPressure || '-'}</TableCell>
+                          <TableCell>{record.temperature}</TableCell>
+                          <TableCell>{record.notes || '-'}</TableCell>
+                          <TableCell align="right">
+                            <Button
+                              size="small"
+                              color="primary"
+                              onClick={() => navigate(`/students/${student.id}/health-record/edit/${record.id}`)}
+                            >
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
+          )}
         </Paper>
       </Box>
     </Box>
