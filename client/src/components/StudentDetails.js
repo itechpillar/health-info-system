@@ -145,17 +145,35 @@ const StudentDetails = () => {
         sx={{
           bgcolor: '#1e2632',
           color: 'white',
-          p: 2,
+          px: 3, // Increased horizontal padding
+          py: 2,
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           zIndex: 1100,
+          display: 'flex',
+          alignItems: 'center',
+          height: '64px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
-        <Typography variant="h5" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
-          School Dashboard
-        </Typography>
+        <Box sx={{ 
+          width: '100%',
+          maxWidth: '1200px',
+          mx: 'auto'
+        }}>
+          <Typography variant="h5" sx={{ 
+            fontSize: { xs: '1.1rem', sm: '1.3rem' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            width: '100%'
+          }}>
+            Health Information System
+          </Typography>
+        </Box>
       </Box>
 
       {/* Main Content */}

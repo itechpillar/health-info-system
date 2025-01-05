@@ -65,49 +65,49 @@ const BMI_CATEGORIES = {
   severelyUnderweight: {
     range: [0, 16],
     label: 'Severe',
-    color: '#1565C0',  // Dark blue
+    color: '#1565C0',
     backgroundColor: '#E3F2FD',
     description: 'BMI < 16: Severely underweight - Medical attention recommended'
   },
   underweight: {
     range: [16, 18.5],
     label: 'Low',
-    color: '#2196F3',  // Blue
+    color: '#2196F3',
     backgroundColor: '#BBDEFB',
     description: 'BMI 16-18.5: Underweight - May need nutritional assessment'
   },
   normal: {
     range: [18.5, 25],
     label: 'Normal',
-    color: '#2E7D32',  // Green
+    color: '#2E7D32',
     backgroundColor: '#E8F5E9',
     description: 'BMI 18.5-25: Healthy weight range'
   },
   overweight: {
     range: [25, 30],
     label: 'High',
-    color: '#ED6C02',  // Orange
+    color: '#ED6C02',
     backgroundColor: '#FFF3E0',
     description: 'BMI 25-30: Overweight - Lifestyle changes may be beneficial'
   },
   obese: {
     range: [30, 35],
     label: 'Very High',
-    color: '#D32F2F',  // Red
+    color: '#D32F2F',
     backgroundColor: '#FFEBEE',
     description: 'BMI 30-35: Obese Class I - Health risks increased'
   },
   severelyObese: {
     range: [35, 40],
     label: 'Severe',
-    color: '#B71C1C',  // Dark red
+    color: '#B71C1C',
     backgroundColor: '#FFCDD2',
     description: 'BMI 35-40: Obese Class II - High health risk'
   },
   morbidallyObese: {
     range: [40, Infinity],
     label: 'Very Severe',
-    color: '#801313',  // Darker red
+    color: '#801313',
     backgroundColor: '#EF9A9A',
     description: 'BMI > 40: Obese Class III - Very high health risk'
   }
@@ -206,7 +206,7 @@ const Dashboard = () => {
       // Fetch health record counts for all students
       const counts = {};
       for (const student of response.data) {
-        const recordsResponse = await axios.get(`${API_URL}/${student.id}/health-records`);
+        const recordsResponse = await axios.get(`${HEALTH_RECORDS_API}/student/${student.id}`);
         counts[student.id] = recordsResponse.data.length;
       }
       setHealthRecordCounts(counts);
@@ -230,7 +230,7 @@ const Dashboard = () => {
         const gradeKey = `${student.grade}${getOrdinalSuffix(student.grade)} Grade`;
         if (stats.hasOwnProperty(gradeKey)) {
           stats[gradeKey]++;
-          stats['All Grades']++; // Increment the total count for all grades
+          stats['All Grades']++;
         }
       });
       
@@ -268,12 +268,10 @@ const Dashboard = () => {
       setError(null);
       await axios.delete(`${API_URL}/${studentToDelete.id}`);
       
-      // If the deleted student was selected, clear the selection
       if (selectedStudent?.id === studentToDelete.id) {
         setSelectedStudent(null);
       }
       
-      // Refresh the students list
       fetchStudents();
       handleDeleteDialogClose();
     } catch (error) {
@@ -283,13 +281,10 @@ const Dashboard = () => {
   };
 
   const handleViewHealthRecords = (student, event) => {
-    // If event exists (icon click), prevent propagation
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
-    
-    // Navigate to the health records page for this student
     navigate(`/student/${student.id}/health-records`);
   };
 
@@ -301,25 +296,6 @@ const Dashboard = () => {
   const handleActionsClose = () => {
     setAnchorEl(null);
     setSelectedStudent(null);
-  };
-
-  const handleActionSelect = (action) => {
-    if (!selectedStudent) return;
-
-    switch(action) {
-      case 'view':
-        handleViewHealthRecords(selectedStudent);
-        break;
-      case 'edit':
-        navigate(`/student/edit/${selectedStudent.id}`);
-        break;
-      case 'delete':
-        handleDeleteDialogOpen(selectedStudent);
-        break;
-      default:
-        break;
-    }
-    handleActionsClose();
   };
 
   if (loading) {
@@ -349,19 +325,31 @@ const Dashboard = () => {
         bottom: 0,
         bgcolor: '#1e2632',
         color: 'white',
-        p: 2,
+        px: 3,
+        py: 2,
         display: { xs: 'flex', md: 'block' },
         flexDirection: { xs: 'row', md: 'column' },
         justifyContent: { xs: 'space-between', md: 'flex-start' },
         alignItems: { xs: 'center', md: 'stretch' },
-        zIndex: 1100
+        zIndex: 1100,
+        height: { xs: '64px', md: 'auto' },
+        boxSizing: 'border-box'
       }}>
-        <Typography variant="h5" sx={{ 
-          mb: { xs: 0, md: 4 },
-          fontSize: { xs: '1.2rem', md: '1.5rem' }
+        <Box sx={{ 
+          flexGrow: 1,
+          overflow: 'hidden',
+          mr: { xs: 2, md: 0 }
         }}>
-          School Dashboard
-        </Typography>
+          <Typography variant="h5" sx={{ 
+            mb: { xs: 0, md: 4 },
+            fontSize: { xs: '1.1rem', md: '1.3rem' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            Health Information System
+          </Typography>
+        </Box>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: { xs: 'row', md: 'column' }, 
@@ -371,7 +359,7 @@ const Dashboard = () => {
           <Button
             component={Link}
             to="/students"
-            startIcon={<Users />}
+            startIcon={<Users {...iconProps} />}
             sx={{
               color: 'white',
               justifyContent: 'flex-start',
@@ -386,7 +374,7 @@ const Dashboard = () => {
           <Button
             component={Link}
             to="/teachers"
-            startIcon={<GraduationCap />}
+            startIcon={<GraduationCap {...iconProps} />}
             sx={{
               color: 'white',
               justifyContent: 'flex-start',
@@ -413,63 +401,80 @@ const Dashboard = () => {
           Student Grade Statistics
         </Typography>
         
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ mx: { xs: 2, sm: 0 } }}>{error}</Alert>
-        ) : (
-          <Grid container spacing={{ xs: 2, sm: 3 }}>
-            {Object.entries(gradeStats).map(([grade, count]) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={grade}>
-                <Paper
-                  sx={{
-                    p: { xs: 2, sm: 3 },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 2,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    transition: 'transform 0.2s',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                    },
-                    height: '100%'
-                  }}
-                  onClick={() => {
-                    if (grade === 'All Grades') {
-                      navigate('/grade/all');
-                    } else {
-                      const gradeNumber = parseInt(grade.split(' ')[0]);
-                      navigate(`/grade/${gradeNumber}`);
-                    }
-                  }}
-                >
-                  <Typography variant="h5" sx={{ 
-                    mb: 2, 
-                    fontWeight: 'bold',
-                    fontSize: { xs: '1.2rem', sm: '1.5rem' }
-                  }}>
-                    {grade}
-                  </Typography>
-                  <Typography variant="h3" sx={{ 
-                    mb: 1, 
-                    fontWeight: 'bold',
-                    fontSize: { xs: '2rem', sm: '2.5rem' }
-                  }}>
-                    {count}
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Students
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
+          {Object.entries(gradeStats).map(([grade, count]) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={grade}>
+              <Paper
+                sx={{
+                  p: { xs: 2, sm: 3 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 2,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'transform 0.2s',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  },
+                  height: '100%'
+                }}
+                onClick={() => {
+                  if (grade === 'All Grades') {
+                    navigate('/grade/all');
+                  } else {
+                    const gradeNumber = parseInt(grade.split(' ')[0]);
+                    navigate(`/grade/${gradeNumber}`);
+                  }
+                }}
+              >
+                <Typography variant="h5" sx={{ 
+                  mb: 2, 
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.2rem', sm: '1.5rem' }
+                }}>
+                  {grade}
+                </Typography>
+                <Typography variant="h3" sx={{ 
+                  mb: 1, 
+                  fontWeight: 'bold',
+                  fontSize: { xs: '2rem', sm: '2.5rem' }
+                }}>
+                  {count}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Students
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Delete Student
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete {studentToDelete?.name}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
